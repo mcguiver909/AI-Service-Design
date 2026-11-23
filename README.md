@@ -7,10 +7,10 @@ Mobile web app built from the Tagly Figma prototype (flows) and UI spec (visual 
 
 - **Sign in with Google** (one tap = sign-up). Each Google account gets its own items, timetable and settings.
   "Explore the demo" loads sample data; "Continue without Google" keeps everything on this device.
-- **Your timetable**: add classes (name, days, start/end, room). Items can be linked to classes.
+- **Weekly schedule**: add anything you do every week (name, days, start/end, place) — work, gym, lessons, classes. Items can be linked to schedules.
 - **Google Calendar (read-only)**: today's events from the calendars you pick, merged with your timetable.
 - **Live weather** (Open-Meteo, no key): current temperature, next 8 hours, rain chance. Rain/cold/sun rules add items automatically.
-- **Today**: packing list = item rules (always / classes / event keywords / weather) × today's schedule × forecast. Tap **Pack** to check items off (or let the keyring do it).
+- **Today**: packing list = item rules (always / weekly schedules / event keywords / weather) × today's schedule × forecast. Tap **Pack** to check items off (or let the keyring do it).
 - **Items, Find, Settings**: item details and rules, ring / directions / lost mode, keyring feedback, quiet hours, places, privacy.
 
 - **Store (`/shop`)**: Apple-store-style home (categories, product shelves), a **design gallery** of ready-made sticker

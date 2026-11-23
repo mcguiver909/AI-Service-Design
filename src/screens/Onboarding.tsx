@@ -15,7 +15,7 @@ import {
 const permRows: { key: keyof Permissions; title: string; sub: string; Icon: typeof Bell }[] = [
   { key: 'bluetooth', title: 'Bluetooth', sub: 'Talk to your keyring and stickers. Needed for tracking.', Icon: Bluetooth },
   { key: 'notifications', title: 'Notifications', sub: 'Warn you when something is missing or left behind.', Icon: Bell },
-  { key: 'calendar', title: 'Calendar', sub: 'Match items to your classes and meetings.', Icon: CalendarDays },
+  { key: 'calendar', title: 'Calendar', sub: 'Match items to your plans and meetings.', Icon: CalendarDays },
   { key: 'location', title: 'Location', sub: 'Local weather and where an item was left.', Icon: MapPin },
 ]
 
@@ -177,10 +177,10 @@ export function PairStep() {
         sub="Press and hold the top of the keyring until the light pulses blue, then keep it close to your phone." />
       <PairingPanel phase={phase} onConnect={connect} />
       <div className="bottom-actions">
-        <Button disabled={phase !== 'connected'} onClick={() => nav('/setup/timetable')}>Continue</Button>
+        <Button disabled={phase !== 'connected'} onClick={() => nav('/setup/schedule')}>Continue</Button>
         <LinkButton onClick={() => setHelp(true)}>Trouble pairing?</LinkButton>
         {phase !== 'connected' && (
-          <button type="button" className="ghost-link" onClick={() => nav('/setup/timetable')}>
+          <button type="button" className="ghost-link" onClick={() => nav('/setup/schedule')}>
             I don’t have a keyring yet · check items off by hand
           </button>
         )}
@@ -200,7 +200,7 @@ export function FirstItemStep() {
   const firstCourse = state.timetable[0]
   return (
     <Screen className="onboarding">
-      <SetupProgress step={4} back="/setup/timetable" />
+      <SetupProgress step={4} back="/setup/schedule" />
       <PageHead title="Add your first item" sub="Peel a clear sticker, press it onto the item, then hold your phone near it." />
       <StickerCard stickerId={stickerId} detected={detected} />
       <ItemForm

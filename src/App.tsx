@@ -37,7 +37,7 @@ function Home() {
 const setup: [string, ReactNode][] = [
   ['/setup/permissions', <PermissionsStep />],
   ['/setup/pair', <PairStep />],
-  ['/setup/timetable', <TimetableStep />],
+  ['/setup/schedule', <TimetableStep />],
   ['/setup/item', <FirstItemStep />],
   ['/setup/connect', <ConnectStep />],
 ]
@@ -54,7 +54,7 @@ const guarded: [string, ReactNode][] = [
   ['/find/:id/ring', <Ring />],
   ['/find/:id/directions', <Directions />],
   ['/settings', <Settings />],
-  ['/settings/timetable', <TimetableSettings />],
+  ['/settings/schedule', <TimetableSettings />],
   ['/settings/keyring', <KeyringSettings />],
   ['/settings/connections', <ConnectionsSettings />],
   ['/settings/notifications', <NotificationSettings />],
@@ -77,6 +77,8 @@ function PhoneApp() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/welcome" element={<Navigate to="/login" replace />} />
+              <Route path="/setup/timetable" element={<Navigate to="/setup/schedule" replace />} />
+              <Route path="/settings/timetable" element={<Navigate to="/settings/schedule" replace />} />
               {setup.map(([path, el]) => <Route key={path} path={path} element={<RequireUser>{el}</RequireUser>} />)}
               {guarded.map(([path, el]) => <Route key={path} path={path} element={<RequireSetup>{el}</RequireSetup>} />)}
               <Route path="*" element={<Home />} />

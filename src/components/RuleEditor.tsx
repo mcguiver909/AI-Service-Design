@@ -11,9 +11,9 @@ const weatherOpts: { kind: WeatherKind; label: string; Icon: typeof Sun }[] = [
   { kind: 'sun', label: 'Strong sun', Icon: Sun },
 ]
 
-const keywordSuggestions = ['Exam', 'Study', 'Meeting', 'Gym', 'Lab', 'Lecture']
+const keywordSuggestions = ['Meeting', 'Gym', 'Study', 'Travel', 'Lesson', 'Exam']
 
-/** Pick timetable classes + calendar keywords. */
+/** Pick weekly schedules + calendar keywords. */
 function EventPicker({ rule, onChange }: { rule: ItemRule; onChange: (r: ItemRule) => void }) {
   const { state } = useStore()
   const [draft, setDraft] = useState('')
@@ -25,7 +25,7 @@ function EventPicker({ rule, onChange }: { rule: ItemRule; onChange: (r: ItemRul
   const unused = keywordSuggestions.filter((s) => !rule.keywords.includes(s)).slice(0, 4)
   return (
     <div className="rule-extra">
-      <p className="mini-label">Classes</p>
+      <p className="mini-label">Weekly schedules</p>
       {state.timetable.length ? (
         <div className="chips">
           {state.timetable.map((c) => {
@@ -40,7 +40,7 @@ function EventPicker({ rule, onChange }: { rule: ItemRule; onChange: (r: ItemRul
           })}
         </div>
       ) : (
-        <p className="hint">No classes yet. <Link to="/settings/timetable" className="text-link small">Add your timetable</Link></p>
+        <p className="hint">Nothing scheduled yet. <Link to="/settings/schedule" className="text-link small">Add a weekly schedule</Link></p>
       )}
       <p className="mini-label">Calendar events containing…</p>
       <div className="chips">
@@ -87,8 +87,8 @@ export function RuleEditor({ rule, onChange }: { rule: ItemRule; onChange: (r: I
         <Toggle label="Always" checked={rule.always} onChange={(v) => onChange({ ...rule, always: v })} />
       </div>
       <div className="rule">
-        <div className="rule-copy"><b>For certain classes or events</b><span>Pick classes, or words in event titles</span></div>
-        <Toggle label="For certain classes or events" checked={rule.events} onChange={(v) => onChange({ ...rule, events: v })} />
+        <div className="rule-copy"><b>For certain schedules or events</b><span>Pick schedules, or words in event titles</span></div>
+        <Toggle label="For certain schedules or events" checked={rule.events} onChange={(v) => onChange({ ...rule, events: v })} />
       </div>
       {rule.events && <EventPicker rule={rule} onChange={onChange} />}
       <div className="rule">
@@ -115,7 +115,7 @@ export function RuleQuickPick({ rule, onChange }: { rule: ItemRule; onChange: (r
     <>
       <div className="seg-pills">
         <button type="button" className={mode === 'always' ? 'on' : ''} onClick={() => pick('always')}>Always</button>
-        <button type="button" className={mode === 'events' ? 'on' : ''} onClick={() => pick('events')}>For certain classes</button>
+        <button type="button" className={mode === 'events' ? 'on' : ''} onClick={() => pick('events')}>For certain schedules</button>
         <button type="button" className={mode === 'weather' ? 'on' : ''} onClick={() => pick('weather')}>For certain weather</button>
       </div>
       {mode === 'events' && <div className="card pad-sm"><EventPicker rule={rule} onChange={onChange} /></div>}

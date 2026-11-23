@@ -46,7 +46,7 @@ export interface Item {
   rule: ItemRule
 }
 
-/** A class in the user's weekly timetable. days: 0 = Sunday … 6 = Saturday. */
+/** A weekly schedule entry (work, gym, lesson, class…). days: 0 = Sunday … 6 = Saturday. */
 export interface Course {
   id: string
   name: string
@@ -211,7 +211,7 @@ export function demoState(): State {
     lastSync: Date.now(),
     timetable: [
       { id: demoCourseId, name: 'Intelligent Vision', days: [today], start: '09:00', end: '10:15', place: 'Engineering 2, 21352', color: 'sky' },
-      { id: 'c-nlp', name: 'Culture Content & NLP', days: [(today + 1) % 7, (today + 3) % 7], start: '13:30', end: '14:45', place: 'Hoam Hall 50310', color: 'lavender' },
+      { id: 'c-gym', name: 'Gym', days: [(today + 1) % 7, (today + 3) % 7], start: '19:00', end: '20:00', place: 'Fitness center', color: 'mint' },
     ],
     weather: {
       kind: 'rain', label: 'Rain from 3 PM', date: todayISO(), live: false, place: 'Seoul · sample', temp: 12, code: 3, high: 14, low: 8,
@@ -221,7 +221,7 @@ export function demoState(): State {
       { id: 'laptop', name: 'Laptop', icon: 'laptop', color: 'yellow', stickerId: 'TG-31C7', battery: 84, status: 'inBag',
         rule: { ...emptyRule, events: true, keywords: ['Study', 'Meeting'] } },
       { id: 'ipad', name: 'iPad', icon: 'tablet', color: 'peach', stickerId: 'TG-9A10', battery: 61, status: 'inBag',
-        rule: { ...emptyRule, events: true, courses: [demoCourseId, 'c-nlp'] } },
+        rule: { ...emptyRule, events: true, courses: [demoCourseId] } },
       { id: 'pencil', name: 'Pencil case', icon: 'pencil', color: 'mint', stickerId: 'TG-4F2A', battery: 72, status: 'leftBehind',
         seen: { place: 'Library 2F', time: '14:52', distance: '350 m', walk: 'about 5 min walking', mapVariant: 0 },
         rule: { ...emptyRule, events: true, courses: [demoCourseId] } },

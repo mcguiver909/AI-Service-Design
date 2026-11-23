@@ -51,8 +51,8 @@ export function Settings() {
         <GroupRow title="Re-pair keyring" tone="link" onClick={() => setRepair(true)} />
       </Group>
 
-      <Group label="Timetable, calendar and weather">
-        <GroupRow title="Timetable" value={state.timetable.length ? `${state.timetable.length} class${state.timetable.length === 1 ? '' : 'es'}` : 'Add classes'} to="/settings/timetable" />
+      <Group label="Schedule, calendar and weather">
+        <GroupRow title="Weekly schedule" value={state.timetable.length ? `${state.timetable.length} schedule${state.timetable.length === 1 ? '' : 's'}` : 'Add schedules'} to="/settings/schedule" />
         <GroupRow title="Google Calendar" value={state.googleConnected ? `${calCount} calendar${calCount === 1 ? '' : 's'}` : 'Off'} to="/settings/connections" />
         <GroupRow title="Weather forecast" value={state.weatherOn ? 'On' : 'Off'} to="/settings/connections" />
       </Group>
@@ -406,7 +406,7 @@ export function AccountSettings() {
       {google ? (
         <p className="hint">{u?.preview
           ? 'Preview mode: Google Calendar sync is shown with sample events. It switches to your real calendar once the site is connected to Google.'
-          : 'Your items, timetable and settings are saved for this account in this browser. Calendar access is read-only.'}</p>
+          : 'Your items, schedule and settings are saved for this account in this browser. Calendar access is read-only.'}</p>
       ) : (
         <>
           <p className="hint">{u?.demo ? 'Sign in to start your own Tagly with your timetable and calendar.' : 'Sign in with Google to use your calendar. What you set up here comes with you.'}</p>

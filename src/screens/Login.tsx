@@ -64,7 +64,7 @@ export function Login() {
       </div>
       <PageHead title="Never leave without it." sub="Tagly checks your bag every morning and tells you what’s missing before you walk out the door." />
       <ul className="feature-list compact">
-        <li><span className="f-ico app"><CalendarDays size={18} /></span><div><b>Your timetable + Google Calendar</b><span>Packs for today’s classes and plans.</span></div></li>
+        <li><span className="f-ico app"><CalendarDays size={18} /></span><div><b>Your schedule + Google Calendar</b><span>Packs for whatever today holds.</span></div></li>
         <li><span className="f-ico sun"><CloudSun size={18} /></span><div><b>Live weather</b><span>Rain later? Your umbrella joins the list.</span></div></li>
       </ul>
 
@@ -89,7 +89,7 @@ export function Login() {
         <h2 className="sheet-title">Sign in with Google</h2>
         <p className="lead">
           In this preview, Google sign-in uses a sample account with a sample calendar, so you can see exactly how
-          your classes and events turn into a packing list. Nothing is sent to Google.
+          your schedule and events turn into a packing list. Nothing is sent to Google.
         </p>
         <div className="preview-cal">
           <p className="mini-label">Calendars that will sync</p>

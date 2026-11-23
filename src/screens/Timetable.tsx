@@ -72,20 +72,20 @@ function CourseSheet({ course, onClose }: { course: Course | null; onClose: () =
   const ok = c.name.trim() && c.days.length > 0 && timeOk
   const editing = !!course?.id
   return (
-    <Sheet open onClose={onClose} title={editing ? 'Edit class' : 'Add class'}>
-      <p className="eyebrow">Timetable</p>
-      <h2 className="sheet-title">{editing ? 'Edit class' : 'Add a class'}</h2>
+    <Sheet open onClose={onClose} title={editing ? 'Edit schedule' : 'Add schedule'}>
+      <p className="eyebrow">Weekly schedule</p>
+      <h2 className="sheet-title">{editing ? 'Edit schedule' : 'Add a weekly schedule'}</h2>
       <form onSubmit={(e) => {
         e.preventDefault(); setTried(true)
         if (!ok) return
         const saved = { ...c, name: c.name.trim(), place: c.place?.trim(), id: c.id || newId(c.name) }
         dispatch({ type: 'upsertCourse', course: saved })
-        toast({ title: editing ? 'Class updated' : `${saved.name} added`, tone: 'success' })
+        toast({ title: editing ? 'Schedule updated' : `${saved.name} added`, tone: 'success' })
         onClose()
       }}>
         <label className="field">
-          <span className="field-label">Class name</span>
-          <input autoFocus={!editing} value={c.name} maxLength={40} placeholder="e.g. Intelligent Vision" onChange={(e) => setC({ ...c, name: e.target.value })}
+          <span className="field-label">Name</span>
+          <input autoFocus={!editing} value={c.name} maxLength={40} placeholder="e.g. Gym, Team meeting, Piano lesson" onChange={(e) => setC({ ...c, name: e.target.value })}
             aria-invalid={tried && !c.name.trim()} />
         </label>
         <fieldset className="field">
@@ -113,10 +113,10 @@ function CourseSheet({ course, onClose }: { course: Course | null; onClose: () =
             <input type="time" className="time-input big" value={c.end} onChange={(e) => setC({ ...c, end: e.target.value })} />
           </label>
         </div>
-        {!timeOk && <span className="field-error">The class must end after it starts.</span>}
+        {!timeOk && <span className="field-error">It must end after it starts.</span>}
         <label className="field">
-          <span className="field-label">Room <small className="text-muted">(optional)</small></span>
-          <input value={c.place ?? ''} maxLength={40} placeholder="e.g. Engineering 2, 21352" onChange={(e) => setC({ ...c, place: e.target.value })} />
+          <span className="field-label">Place <small className="text-muted">(optional)</small></span>
+          <input value={c.place ?? ''} maxLength={40} placeholder="e.g. Office, Fitness center" onChange={(e) => setC({ ...c, place: e.target.value })} />
         </label>
         <fieldset className="field">
           <legend className="field-label">Colour</legend>
@@ -127,13 +127,13 @@ function CourseSheet({ course, onClose }: { course: Course | null; onClose: () =
             ))}
           </div>
         </fieldset>
-        <Button type="submit">{editing ? 'Save class' : 'Add class'}</Button>
+        <Button type="submit">{editing ? 'Save schedule' : 'Add schedule'}</Button>
         {editing && (
           <Button variant="danger" onClick={() => {
             dispatch({ type: 'removeCourse', id: c.id })
             toast({ title: `${c.name} removed` })
             onClose()
-          }}>Remove class</Button>
+          }}>Remove schedule</Button>
         )}
       </form>
     </Sheet>
@@ -160,12 +160,12 @@ export function TimetableEditor() {
         ))}
         {state.timetable.length === 0 && (
           <div className="empty-timetable">
-            <b>No classes yet</b>
-            <span>Add each class once with its days and time. Tagly repeats it every week.</span>
+            <b>Nothing scheduled yet</b>
+            <span>Add things you do every week, like work, the gym or a lesson. Tagly repeats them on those days.</span>
           </div>
         )}
       </div>
-      <Button variant="blue" onClick={() => setEditing(null)}><Plus size={18} /> Add class</Button>
+      <Button variant="blue" onClick={() => setEditing(null)}><Plus size={18} /> Add schedule</Button>
       {editing !== undefined && <CourseSheet key={editing?.id ?? 'new'} course={editing} onClose={() => setEditing(undefined)} />}
     </>
   )
@@ -177,11 +177,11 @@ export function TimetableStep() {
   return (
     <Screen className="onboarding">
       <SetupProgress step={3} back="/setup/pair" />
-      <PageHead title="Your timetable" sub="Add your classes. On class days, Tagly adds what you need for them to the morning list." />
+      <PageHead title="Your weekly schedule" sub="Add what you do every week. On those days, Tagly adds what you need to the morning list." />
       <TimetableEditor />
       <div className="bottom-actions">
         <Button onClick={() => nav('/setup/item')}>{state.timetable.length ? 'Continue' : 'Skip for now'}</Button>
-        {state.timetable.length === 0 && <p className="hint center">You can add classes later in Settings → Timetable.</p>}
+        {state.timetable.length === 0 && <p className="hint center">You can add schedules later in Settings → Weekly schedule.</p>}
       </div>
     </Screen>
   )
@@ -190,7 +190,7 @@ export function TimetableStep() {
 export function TimetableSettings() {
   return (
     <Screen tabs>
-      <PageHead back="/settings" backLabel="Settings" title="Timetable" sub="Tap a class to edit it. Link items to classes from each item’s “When do I need this?”." />
+      <PageHead back="/settings" backLabel="Settings" title="Weekly schedule" sub="Tap a schedule to edit it. Link items to schedules from each item’s “When do I need this?”." />
       <TimetableEditor />
     </Screen>
   )

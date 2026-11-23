@@ -105,8 +105,8 @@ function Schedule() {
       })}
       {events.length === 0 && (
         <p className="row-sub">
-          No classes or events today.{' '}
-          {state.timetable.length === 0 && <button type="button" className="text-link small inline" onClick={() => nav('/settings/timetable')}>Add your timetable</button>}
+          Nothing scheduled today.{' '}
+          {state.timetable.length === 0 && <button type="button" className="text-link small inline" onClick={() => nav('/settings/schedule')}>Add your weekly schedule</button>}
         </p>
       )}
       {needsRefresh && canSync && <p className="hint">Google sessions last an hour. Tap “Refresh calendar” to load new events.</p>}

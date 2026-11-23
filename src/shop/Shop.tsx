@@ -201,7 +201,7 @@ function ShopHome() {
         <div className="how-grid">
           <div><span className="how-art"><StickerArt d={sig[0]} /></span><h3>Sticker tags</h3><p>Decorate your laptop, iPad and pencil case. Every sticker is also a tracker, with a paper-thin Bluetooth tag under a skin you can swap.</p></div>
           <div><span className="how-art"><HubArt d={defaultHub} led="red" /></span><h3>Keyring hub</h3><p>Lives on your bag, knows what’s inside, and glows red and buzzes when something is missing. Green means you’re ready.</p></div>
-          <div><span className="how-art"><LogoMark size={64} /></span><h3>Context-aware app</h3><p>Your timetable, calendar and the forecast become today’s checklist. Lost items are found through a mesh network.</p></div>
+          <div><span className="how-art"><LogoMark size={64} /></span><h3>Context-aware app</h3><p>Your schedule, calendar and the forecast become today’s checklist. Lost items are found through a mesh network.</p></div>
         </div>
       </section>
     </>
@@ -985,7 +985,7 @@ function OrderDone() {
       </div>
       <div className="done-next">
         <h2>While you wait</h2>
-        <p className="muted">Set up the app now: add your timetable and items, and your tags will pair in seconds when they arrive.</p>
+        <p className="muted">Set up the app now: add your schedule and items, and your tags will pair in seconds when they arrive.</p>
         <div className="hero-cta center">
           <Link to="/" className="sbtn sbtn-dark"><Smartphone size={18} /> Open the Tagly app</Link>
           <Link to="/shop" className="sbtn sbtn-light">Back to store</Link>
