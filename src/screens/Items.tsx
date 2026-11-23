@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { BatteryMedium, Plus } from 'lucide-react'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { BatteryMedium, Plus, Sparkles } from 'lucide-react'
 import { emptyRule, locationLine, newId, randomStickerId, useStore } from '../store'
-import type { ItemStatus } from '../store'
-import { ItemTile } from '../components/icons'
+import type { IconKey, ItemStatus } from '../store'
+import { ItemTile, itemIcons } from '../components/icons'
 import { draftFromItem, ItemForm, StickerCard, useStickerScan } from '../components/ItemForm'
 import { MapView } from '../components/MapView'
 import { RuleEditor } from '../components/RuleEditor'
@@ -189,17 +189,27 @@ function RepairBody({ name, onDone }: { name: string; onDone: () => void }) {
 export function AddItem() {
   const { dispatch, toast } = useStore()
   const nav = useNavigate()
+  const [params] = useSearchParams()
+  const aiReason = params.get('ai')
+  const presetIcon = (Object.keys(itemIcons) as IconKey[]).find((k) => k === params.get('icon'))
   const detected = useStickerScan()
   const [stickerId] = useState(randomStickerId)
   return (
     <Screen tabs>
-      <PageHead back="/items" backLabel="Items" title="Add an item" sub="Peel a clear sticker, press it onto the item, then hold your phone near it." />
+      <PageHead back={aiReason ? '/today' : '/items'} backLabel={aiReason ? 'Today' : 'Items'} title="Add an item" sub="Peel a clear sticker, press it onto the item, then hold your phone near it." />
+      {aiReason && <p className="ai-from"><Sparkles size={14} /> Suggested by Tagly AI · {aiReason}</p>}
       <StickerCard stickerId={stickerId} detected={detected} />
       <ItemForm detected={detected} submitLabel="Save item"
-        initial={{ name: '', icon: 'bottle', color: 'sky', stickerId, rule: { ...emptyRule, always: true } }}
+        initial={{ name: params.get('name') ?? '', icon: presetIcon ?? 'bottle', color: 'sky', stickerId, rule: aiReason ? { ...emptyRule } : { ...emptyRule, always: true } }}
         onSubmit={(d) => {
           const id = newId(d.name)
           dispatch({ type: 'upsertItem', item: { id, name: d.name, icon: d.icon, color: d.color, rule: d.rule, stickerId, battery: 100, status: 'withYou' } })
+          if (aiReason) {
+            dispatch({ type: 'aiAccept', itemId: id, reason: aiReason, keys: (params.get('keys') ?? '').split(',').filter(Boolean) })
+            toast({ title: `${d.name} tagged and added to today`, body: aiReason, tone: 'success' })
+            nav('/today')
+            return
+          }
           toast({ title: `${d.name} added`, body: d.rule.always ? 'Its Always rule adds it to your daily list.' : 'It will be suggested when its rule matches.', tone: 'success' })
           nav(`/items/${id}`)
         }} />

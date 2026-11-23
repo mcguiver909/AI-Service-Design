@@ -37,6 +37,9 @@ export function useStickerScan(delay = 1300) {
 }
 
 const nameHints: [RegExp, IconKey][] = [
+  [/charger|power ?bank|cable|충전기|보조배터리|케이블/i, 'charger'],
+  [/cloth|shirt|jacket|towel|swimsuit|옷|운동복|수건|수영복|자켓/i, 'shirt'],
+  [/passport|id card|student id|여권|신분증|학생증/i, 'idcard'],
   [/laptop|macbook|notebook|gram|노트북/i, 'laptop'],
   [/ipad|tablet|galaxy tab|태블릿|아이패드/i, 'tablet'],
   [/pencil|pen|필통/i, 'pencil'],

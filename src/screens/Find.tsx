@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Check, ExternalLink, Navigation, Radar } from 'lucide-react'
+import { Check, ExternalLink, Navigation, Radar, Sparkles } from 'lucide-react'
+import { likelyPlaces, pct } from '../ai'
 import { useStore } from '../store'
 import type { Item } from '../store'
 import { ItemTile } from '../components/icons'
@@ -117,6 +118,8 @@ export function Find() {
         )}
       </Card>
 
+      {state.ai.on && (selected.status === 'leftBehind' || lost) && <LikelyPlaces item={selected} />}
+
       <Sheet open={confirmLost} onClose={() => setConfirmLost(false)} title="Mark as lost">
         <p className="eyebrow">{selected.name}</p>
         <h2 className="sheet-title">Mark as lost?</h2>
@@ -129,6 +132,32 @@ export function Find() {
         <Button variant="light" onClick={() => setConfirmLost(false)}>Cancel</Button>
       </Sheet>
     </Screen>
+  )
+}
+
+function LikelyPlaces({ item }: { item: Item }) {
+  const { state } = useStore()
+  const guesses = likelyPlaces(state, item)
+  if (guesses.length < 2) return null
+  return (
+    <Card className="ai-places">
+      <div className="ai-head">
+        <span className="ai-mark"><Sparkles size={16} /></span>
+        <b>Where it probably is</b>
+        <span className="ai-engine device">On-device</span>
+      </div>
+      <p className="hint">Ranked from where the signal dropped and where you spent time today.</p>
+      {guesses.map((g, i) => (
+        <div key={g.place + i} className="place-guess">
+          <span className="pg-rank">{i + 1}</span>
+          <span className="row-copy">
+            <span className="row-title">{g.place}</span>
+            <span className="row-sub">{g.why}</span>
+            <span className="ai-conf"><span className="track"><i style={{ width: pct(g.p) }} /></span><small>{pct(g.p)}</small></span>
+          </span>
+        </div>
+      ))}
+    </Card>
   )
 }
 

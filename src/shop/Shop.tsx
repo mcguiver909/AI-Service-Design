@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, NavLink, Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
-  ArrowRight, Check, ChevronLeft, ChevronRight, ImagePlus, Minus, Package, Plus, RotateCcw, ShoppingBag, Smartphone, Trash2, Truck, Upload,
+  ArrowRight, Check, ChevronLeft, ChevronRight, ImagePlus, Minus, Package, Plus, RotateCcw, ShoppingBag, Smartphone, Sparkles, Trash2, Truck, Upload,
 } from 'lucide-react'
 import {
   ENGRAVING_FEE, FREE_SHIPPING_FROM, PATTERN_FEE, SHIPPING_EXPRESS, STRAP_FEE, ShopProvider, art, artInfo, artOrder, byId, caseColors, caseInfo, casePrice, cases, finishes, patterns,
@@ -10,13 +10,15 @@ import {
   stickerColors, strapColors, unitPrice, useShop, won,
 } from './shopStore'
 import type {
-  CartLine, CaseChoice, CaseKey, CasePattern, DotMark, Finish, FrameStyle, HubDesign, ProductId, SetKey, StickerDesign, Swatch,
+  ArtKey, CartLine, CaseChoice, CaseKey, CasePattern, DotMark, Finish, FrameStyle, HubDesign, ProductId, SetKey, StickerDesign, Swatch,
 } from './shopStore'
 import { CaseArt, HubArt, StickerArt, fabricStyle, fabrics } from './Previews'
 import type { FabricKey, LedState } from './Previews'
 import { LogoMark } from '../components/icons'
 import { loadImage, makeDieCut } from './diecut'
 import type { CutShape } from './diecut'
+import { generateDesigns } from './aiDesign'
+import type { GenDesign } from './aiDesign'
 import './shop.css'
 
 /* Shared bits ---------------------------------------------------------------------- */
@@ -201,7 +203,7 @@ function ShopHome() {
         <div className="how-grid">
           <div><span className="how-art"><StickerArt d={sig[0]} /></span><h3>Sticker tags</h3><p>Decorate your laptop, iPad and pencil case. Every sticker is also a tracker, with a paper-thin Bluetooth tag under a skin you can swap.</p></div>
           <div><span className="how-art"><HubArt d={defaultHub} led="red" /></span><h3>Keyring hub</h3><p>Lives on your bag, knows what’s inside, and glows red and buzzes when something is missing. Green means you’re ready.</p></div>
-          <div><span className="how-art"><LogoMark size={64} /></span><h3>Context-aware app</h3><p>Your schedule, calendar and the forecast become today’s checklist. Lost items are found through a mesh network.</p></div>
+          <div><span className="how-art"><LogoMark size={64} /></span><h3>AI packing assistant</h3><p>Tagly AI reads your schedule and the forecast, learns what you tend to forget, and speaks up the moment you leave. Left something? It remembers where.</p></div>
         </div>
       </section>
     </>
@@ -252,6 +254,56 @@ function SetChips({ value, onChange }: { value: SetKey | 'all'; onChange: (v: Se
   )
 }
 
+const promptIdeas = ['rainy day cat vibes in pastel purple', '보라색 우주 행성', 'neon lightning for my charger', '봄 꽃 민트색']
+
+function AiDesigner() {
+  const nav = useNavigate()
+  const [prompt, setPrompt] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [res, setRes] = useState<{ engine: 'claude' | 'device'; designs: GenDesign[] } | null>(null)
+  const go = async (p = prompt) => {
+    if (!p.trim()) return
+    setPrompt(p); setBusy(true)
+    const r = await generateDesigns(p.trim())
+    setRes(r); setBusy(false)
+  }
+  return (
+    <section className="ai-gen">
+      <div className="ai-gen-head">
+        <span className="ai-gen-mark"><Sparkles size={18} /></span>
+        <div>
+          <h2>Describe a sticker.</h2>
+          <p className="muted">Tagly AI turns a few words into three designs you can customise. Korean or English.</p>
+        </div>
+      </div>
+      <form className="ai-gen-form" onSubmit={(e) => { e.preventDefault(); go() }}>
+        <input value={prompt} maxLength={120} placeholder="e.g. a sleepy moon in soft blue" onChange={(e) => setPrompt(e.target.value)} aria-label="Describe a sticker" />
+        <button type="submit" className="sbtn sbtn-blue" disabled={busy || !prompt.trim()}>{busy ? 'Designing…' : 'Generate'}</button>
+      </form>
+      {!res && (
+        <div className="ai-gen-ideas">
+          {promptIdeas.map((p) => <button key={p} type="button" onClick={() => go(p)}>{p}</button>)}
+        </div>
+      )}
+      {res && (
+        <>
+          <div className="gal-grid ai-gen-grid">
+            {res.designs.map((g, i) => (
+              <button key={i} type="button" className="gal-card"
+                onClick={() => nav(`/shop/design/stickers?art=${g.design.art}&color=${g.design.color.slice(1)}&accent=${g.design.accent.slice(1)}`)}>
+                <span className="gal-img" style={{ background: '#F3F1FF' }}><StickerArt d={g.design} showAntenna /></span>
+                <span className="gal-name">{g.name}</span>
+                <span className="gal-set">Tap to customise</span>
+              </button>
+            ))}
+          </div>
+          <p className="muted small ai-gen-note">{res.engine === 'claude' ? 'Designed with Claude.' : 'Designed on-device from your words.'} Not quite it? Change a word and generate again.</p>
+        </>
+      )}
+    </section>
+  )
+}
+
 function Gallery() {
   const [params, setParams] = useSearchParams()
   const nav = useNavigate()
@@ -269,6 +321,7 @@ function Gallery() {
 
       {tab === 'skins' ? (
         <>
+          <AiDesigner />
           <div className="gal-filters">
             <SetChips value={setFilter} onChange={(v) => setParams(v === 'all' ? {} : { set: v })} />
             <div className="color-filter">
@@ -621,6 +674,11 @@ function Designer() {
     if (setKey) { const skins = gallery.filter((g) => g.set === setKey).map((g) => g.design); if (skins.length) pack = pack.map((_, i) => skins[i % skins.length]) }
     if (designId && byId(designId)) pack = [byId(designId)!.design, ...pack.slice(1)]
     if (params.get('upload') === '1') pack = [{ ...baseSticker, style: 'photo' as const }, ...pack.slice(1)]
+    const artKey = params.get('art') as ArtKey | null
+    const hexOk = (h: string | null) => !!h && /^[0-9A-Fa-f]{6}$/.test(h)
+    if (artKey && artOrder.includes(artKey) && hexOk(params.get('color')) && hexOk(params.get('accent'))) {
+      pack = [art(artKey, `#${params.get('color')!.toUpperCase()}`, `#${params.get('accent')!.toUpperCase()}`), ...pack.slice(1)]
+    }
     const hub: HubDesign = {
       ...defaultHub,
       shell: shell && /^[0-9A-Fa-f]{6}$/.test(shell) ? `#${shell.toUpperCase()}` : defaultHub.shell,

@@ -1,9 +1,11 @@
 import { useNavigate } from 'react-router-dom'
 import {
-  Check, Cloud, CloudFog, CloudLightning, CloudRain, CloudSun, MapPin, RefreshCw, Snowflake, Sun, Umbrella, X,
+  Check, Cloud, CloudFog, CloudLightning, CloudRain, CloudSun, MapPin, RefreshCw, Snowflake, Sparkles, Sun, Umbrella,
 } from 'lucide-react'
 import type { LucideProps } from 'lucide-react'
-import { activeEvents, eventItems, packingList, suggestion, useStore } from '../store'
+import { activeEvents, eventItems, packingList, useStore } from '../store'
+import { forgetRisk, pct } from '../ai'
+import { AiCard } from '../components/AiCard'
 import { codeGroup, codeText, hourLabel } from '../weather'
 import type { CodeGroup } from '../weather'
 import { useCalendarSync } from '../sync'
@@ -114,6 +116,17 @@ function Schedule() {
   )
 }
 
+function RiskSub({ reason, risk }: { reason: string; risk: ReturnType<typeof forgetRisk> }) {
+  return (
+    <>
+      {reason}
+      {risk && risk.risk >= 0.35 && (
+        <span className="risk-line"><Sparkles size={11} /> {risk.why} · {pct(risk.risk)} risk</span>
+      )}
+    </>
+  )
+}
+
 export function Today() {
   const { state, dispatch, toast } = useStore()
   const nav = useNavigate()
@@ -121,7 +134,6 @@ export function Today() {
   const packed = list.filter((e) => e.packed).length
   const missing = list.length - packed
   const allPacked = list.length > 0 && missing === 0
-  const sugg = suggestion(state)
 
   const keyringPill = !state.keyring.paired ? null : allPacked ? (
     <Badge tone="green" dot>All packed</Badge>
@@ -149,6 +161,7 @@ export function Today() {
         </Card>
       )}
 
+      <AiCard />
       <WeatherCard />
       <Schedule />
 
@@ -159,7 +172,7 @@ export function Today() {
               className={!ok ? 'row-missing' : ''}
               leading={<ItemTile icon={item.icon} color={item.color} />}
               title={item.name}
-              sub={reason}
+              sub={<RiskSub reason={reason} risk={!ok && state.ai.on ? forgetRisk(state, item) : null} />}
               onClick={() => nav(`/items/${item.id}`)}
               trailing={ok ? (
                 <button type="button" className="badge badge-green as-btn" onClick={(e) => { e.stopPropagation(); pack(item.id, item.name, false) }}
@@ -185,22 +198,6 @@ export function Today() {
               <h3>Nothing needed today</h3>
               <p className="row-sub">No class, event or weather rule matches today. Tap Edit to add something for today only.</p>
             </Card>
-          )}
-          {sugg && (
-            <div className="row suggestion">
-              <ItemTile icon={sugg.icon} color={sugg.color} />
-              <span className="row-copy">
-                <span className="row-title">{sugg.name}?</span>
-                <span className="row-sub">Suggested · you often take them on {new Date().toLocaleDateString('en-GB', { weekday: 'long' })}s</span>
-              </span>
-              <Button variant="blue" small block={false} onClick={() => {
-                dispatch({ type: 'toggleToday', id: sugg.id, include: true })
-                toast({ title: `${sugg.name} added`, body: 'Added manually for today.' })
-              }}>Add</Button>
-              <button type="button" className="icon-btn" aria-label="Dismiss suggestion" onClick={() => dispatch({ type: 'dismissSuggestion', id: sugg.id })}>
-                <X size={18} />
-              </button>
-            </div>
           )}
         </div>
         {!state.keyring.paired && list.some((e) => !e.packed) && (

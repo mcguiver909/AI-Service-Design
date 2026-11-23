@@ -10,6 +10,7 @@ import { TimetableSettings, TimetableStep } from './screens/Timetable'
 import { EditPackingList, Today } from './screens/Today'
 import { AddItem, EditItem, ItemDetail, Items } from './screens/Items'
 import { Directions, Find, Ring } from './screens/Find'
+import { AiSettings, DepartureDemo } from './screens/Ai'
 import {
   AccountSettings, ConnectionsSettings, HelpSettings, KeyringSettings, NotificationDemo,
   NotificationSettings, PlacesSettings, PrivacySettings, Settings,
@@ -63,6 +64,8 @@ const guarded: [string, ReactNode][] = [
   ['/settings/privacy', <PrivacySettings />],
   ['/settings/help', <HelpSettings />],
   ['/settings/account', <AccountSettings />],
+  ['/settings/ai', <AiSettings />],
+  ['/settings/ai/departure', <DepartureDemo />],
 ]
 
 const ShopApp = lazy(() => import('./shop/Shop'))

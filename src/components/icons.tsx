@@ -1,5 +1,5 @@
 import {
-  BookOpen, Camera, Earbuds, Glasses, Headphones, KeyRound, Laptop, Milk, Tablet, Umbrella, Wallet,
+  BatteryCharging, BookOpen, Camera, Earbuds, Glasses, Headphones, IdCard, KeyRound, Laptop, Milk, Shirt, Tablet, Umbrella, Wallet,
 } from 'lucide-react'
 import type { LucideProps } from 'lucide-react'
 import type { ColorKey, IconKey } from '../store'
@@ -29,13 +29,16 @@ export const itemIcons: Record<IconKey, (p: LucideProps) => React.ReactElement> 
   book: (p) => <BookOpen {...p} />,
   headphones: (p) => <Headphones {...p} />,
   camera: (p) => <Camera {...p} />,
+  charger: (p) => <BatteryCharging {...p} />,
+  shirt: (p) => <Shirt {...p} />,
+  idcard: (p) => <IdCard {...p} />,
 }
 
-export const iconOrder: IconKey[] = ['laptop', 'tablet', 'pencil', 'umbrella', 'earbuds', 'key', 'bottle', 'wallet', 'glasses', 'book', 'headphones', 'camera']
+export const iconOrder: IconKey[] = ['laptop', 'tablet', 'pencil', 'umbrella', 'earbuds', 'key', 'bottle', 'wallet', 'glasses', 'book', 'headphones', 'camera', 'charger', 'shirt', 'idcard']
 
 export const iconNames: Record<IconKey, string> = {
   laptop: 'Laptop', tablet: 'Tablet', pencil: 'Pencil case', umbrella: 'Umbrella', earbuds: 'Earbuds',
-  key: 'Keys', bottle: 'Bottle', wallet: 'Wallet', glasses: 'Glasses', book: 'Book', headphones: 'Headphones', camera: 'Camera',
+  key: 'Keys', bottle: 'Bottle', wallet: 'Wallet', glasses: 'Glasses', book: 'Book', headphones: 'Headphones', camera: 'Camera', charger: 'Charger', shirt: 'Clothes', idcard: 'ID card',
 }
 
 export const colors: Record<ColorKey, { bg: string; fg: string; name: string }> = {

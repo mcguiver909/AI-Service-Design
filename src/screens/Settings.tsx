@@ -43,6 +43,12 @@ export function Settings() {
         } />
       </Group>
 
+      <Group label="Tagly AI">
+        <GroupRow title="Smart suggestions" value={state.ai.on ? 'On' : 'Off'} to="/settings/ai" />
+        <GroupRow title="What Tagly learned" value={`${state.history.length} days`} to="/settings/ai" />
+        <GroupRow title="Try departure detection" tone="link" to="/settings/ai/departure" />
+      </Group>
+
       <Group label="Keyring">
         <GroupRow title="Status" value={state.keyring.paired
           ? <span className="text-green strong">● Connected · {state.keyring.battery}%</span>

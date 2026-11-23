@@ -9,6 +9,7 @@ import type { HourCast } from './weather'
 export type IconKey =
   | 'laptop' | 'tablet' | 'pencil' | 'umbrella' | 'earbuds' | 'key'
   | 'bottle' | 'wallet' | 'glasses' | 'book' | 'headphones' | 'camera'
+  | 'charger' | 'shirt' | 'idcard'
 export type ColorKey = 'yellow' | 'peach' | 'mint' | 'lavender' | 'sky' | 'gray'
 export type ItemStatus = 'inBag' | 'withYou' | 'leftBehind' | 'lost'
 export type WeatherKind = 'rain' | 'cold' | 'sun'
@@ -92,6 +93,22 @@ export interface AlertTypes {
   lowBattery: boolean
 }
 
+/** One day of bag history: what was needed and what got left behind. Feeds the forget-risk model. */
+export interface DayLog {
+  date: string
+  wd: number
+  rain: boolean
+  /** Concept tags of the day's events (meeting, gym, class…). */
+  tags: string[]
+  needed: string[]
+  forgot: string[]
+}
+
+/** Feedback on AI suggestions, keyed by `${concept}|${itemKey}`. */
+export type AiFeedback = Record<string, { yes: number; no: number }>
+
+export interface AiSettings { on: boolean; cloud: boolean }
+
 export interface User { email: string; name: string; picture?: string; demo?: boolean; preview?: boolean }
 
 export interface State {
@@ -120,6 +137,11 @@ export interface State {
   quietTo: string
   alerts: AlertTypes
   places: Place[]
+  ai: AiSettings
+  aiFeedback: AiFeedback
+  /** Today's accepted / dismissed AI suggestions. reasons: itemId → why it was added. */
+  aiToday: { date: string; reasons: Record<string, string>; dismissed: string[] }
+  history: DayLog[]
 }
 
 /* ------------------------------------------------------------------ */
@@ -163,6 +185,10 @@ export function newAccountState(user: User | null): State {
     quietTo: '07:00',
     alerts: { missing: true, leftBehind: true, listChanges: true, found: true, lowBattery: false },
     places: [{ id: 'home', name: 'Home' }],
+    ai: { on: true, cloud: true },
+    aiFeedback: {},
+    aiToday: { date: todayISO(), reasons: {}, dismissed: [] },
+    history: [],
   }
 }
 
@@ -187,6 +213,28 @@ export function previewCalendar(): Pick<State, 'calendars' | 'gevents' | 'gevent
     geventsDate: todayISO(),
     lastSync: Date.now(),
   }
+}
+
+/** Four weeks of sample bag history: the pencil case gets forgotten on class days, the umbrella on rainy afternoons. */
+export function demoHistory(classDay: number): DayLog[] {
+  const out: DayLog[] = []
+  const now = new Date()
+  for (let k = 28; k >= 1; k--) {
+    const d = new Date(now); d.setDate(now.getDate() - k)
+    const wd = d.getDay()
+    if (wd === 0) continue
+    const rain = [3, 6, 11, 13, 20, 25].includes(k)
+    const isClass = wd === classDay
+    const tags = [...(isClass ? ['class'] : []), ...(k % 3 === 0 ? ['meeting'] : []), ...(k % 4 === 1 ? ['study'] : [])]
+    const needed = ['laptop', ...(isClass ? ['ipad', 'pencil'] : []), ...(rain ? ['umbrella'] : []), ...(k % 2 ? ['earbuds'] : [])]
+    const forgot: string[] = []
+    if (isClass && k !== 21) forgot.push('pencil')
+    if (rain && [3, 11, 20, 25].includes(k)) forgot.push('umbrella')
+    if (k === 9) forgot.push('earbuds')
+    if (k === 16) forgot.push('laptop')
+    out.push({ date: todayISO(d), wd, rain, tags, needed, forgot })
+  }
+  return out
 }
 
 /** "Explore the demo": the sample day from the design (Intelligent Vision + Library study, rain from 3 PM). */
@@ -217,6 +265,7 @@ export function demoState(): State {
       kind: 'rain', label: 'Rain from 3 PM', date: todayISO(), live: false, place: 'Seoul · sample', temp: 12, code: 3, high: 14, low: 8,
       hours: [9, 10, 11, 12, 13, 14, 15, 16].map((h) => ({ h, temp: h < 13 ? 10 + (h - 9) : 14 - Math.max(0, h - 14), pop: h >= 15 ? 80 : h >= 13 ? 40 : 10, code: h >= 15 ? 61 : h >= 13 ? 3 : 2 })),
     },
+    history: demoHistory(today),
     items: [
       { id: 'laptop', name: 'Laptop', icon: 'laptop', color: 'yellow', stickerId: 'TG-31C7', battery: 84, status: 'inBag',
         rule: { ...emptyRule, events: true, keywords: ['Study', 'Meeting'] } },
@@ -249,6 +298,14 @@ type Action =
   | { type: 'dismissSuggestion'; id: string }
   | { type: 'upsertCourse'; course: Course }
   | { type: 'removeCourse'; id: string }
+  | { type: 'aiAccept'; itemId: string; reason: string; keys: string[] }
+  | { type: 'aiDismiss'; key: string; keys: string[] }
+  | { type: 'aiResetLearning' }
+  | { type: 'logDay'; log: DayLog }
+
+function freshAiToday(state: State) {
+  return state.aiToday.date === todayISO() ? state.aiToday : { date: todayISO(), reasons: {}, dismissed: [] }
+}
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -290,6 +347,23 @@ function reducer(state: State, action: Action): State {
         timetable: exists ? state.timetable.map((c) => (c.id === action.course.id ? action.course : c)) : [...state.timetable, action.course],
       }
     }
+    case 'aiAccept': {
+      const today = freshAiToday(state)
+      const aiFeedback = { ...state.aiFeedback }
+      for (const k of action.keys) aiFeedback[k] = { yes: (aiFeedback[k]?.yes ?? 0) + 1, no: aiFeedback[k]?.no ?? 0 }
+      const next = { ...state, aiFeedback, aiToday: { ...today, reasons: { ...today.reasons, [action.itemId]: action.reason } } }
+      return reducer(next, { type: 'toggleToday', id: action.itemId, include: true })
+    }
+    case 'aiDismiss': {
+      const today = freshAiToday(state)
+      const aiFeedback = { ...state.aiFeedback }
+      for (const k of action.keys) aiFeedback[k] = { yes: aiFeedback[k]?.yes ?? 0, no: (aiFeedback[k]?.no ?? 0) + 1 }
+      return { ...state, aiFeedback, aiToday: { ...today, dismissed: [...today.dismissed, action.key] } }
+    }
+    case 'aiResetLearning':
+      return { ...state, aiFeedback: {}, aiToday: { date: todayISO(), reasons: {}, dismissed: [] } }
+    case 'logDay':
+      return { ...state, history: [...state.history.filter((h) => h.date !== action.log.date), action.log].slice(-120) }
     case 'removeCourse':
       return {
         ...state,
@@ -362,7 +436,8 @@ export function packingList(state: State): ListEntry[] {
     if (removed.includes(item.id)) continue
     const auto = autoReason(state, item)
     if (auto || added.includes(item.id)) {
-      out.push({ item, reason: auto ?? 'Added manually for today', packed: item.status === 'inBag' })
+      const ai = state.aiToday.date === todayISO() ? state.aiToday.reasons[item.id] : undefined
+      out.push({ item, reason: auto ?? (ai ? `AI · ${ai}` : 'Added manually for today'), packed: item.status === 'inBag' })
     }
   }
   return out
