@@ -3,14 +3,25 @@ import { useNavigate } from 'react-router-dom'
 import { CalendarDays, CloudSun, Lock } from 'lucide-react'
 import { CalendarScopeError, fetchProfile, googleConfigured, preloadGoogle, requestAccess } from '../google'
 import { pullCalendar } from '../sync'
-import { useStore } from '../store'
-import { Button, LinkButton, Notice, PageHead, PulseRings, Screen } from '../components/ui'
+import { previewCalendar, useStore } from '../store'
+import { Button, LinkButton, Notice, PageHead, PulseRings, Screen, Sheet } from '../components/ui'
 
 export function Login() {
   const nav = useNavigate()
   const { state, signIn, startDemo, set, toast } = useStore()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [name, setName] = useState('')
+
+  const previewSignIn = () => {
+    const display = name.trim() || 'Tagly user'
+    const slug = display.toLowerCase().replace(/[^a-z0-9가-힣]+/g, '.').replace(/^\.|\.$/g, '') || 'user'
+    const s = signIn({ email: `${slug}@preview.tagly`, name: display, preview: true })
+    set({ ...previewCalendar(), permissions: { ...s.permissions, calendar: true } })
+    setPreviewOpen(false)
+    nav(s.onboarded ? '/today' : '/setup/permissions')
+  }
 
   useEffect(() => { preloadGoogle() }, [])
   useEffect(() => {
@@ -59,10 +70,7 @@ export function Login() {
 
       <div className="bottom-actions">
         {error && <Notice>{error}</Notice>}
-        {!googleConfigured && (
-          <Notice tone="info">Google sign-in isn’t set up on this site yet. Add <b>VITE_GOOGLE_CLIENT_ID</b> to enable it. You can still try the demo.</Notice>
-        )}
-        <Button className="google-btn" disabled={!googleConfigured || busy} onClick={google}>
+        <Button className="google-btn" disabled={busy} onClick={googleConfigured ? google : () => setPreviewOpen(true)}>
           <span className="g-mark" aria-hidden="true">G</span>
           {busy ? 'Signing in…' : 'Continue with Google'}
         </Button>
@@ -75,6 +83,29 @@ export function Login() {
           nav('/setup/permissions')
         }}>Continue without Google · this device only</button>
       </div>
+
+      <Sheet open={previewOpen} onClose={() => setPreviewOpen(false)} title="Preview sign-in">
+        <p className="eyebrow">Preview</p>
+        <h2 className="sheet-title">Sign in with Google</h2>
+        <p className="lead">
+          In this preview, Google sign-in uses a sample account with a sample calendar, so you can see exactly how
+          your classes and events turn into a packing list. Nothing is sent to Google.
+        </p>
+        <div className="preview-cal">
+          <p className="mini-label">Calendars that will sync</p>
+          {previewCalendar().calendars.filter((c) => c.selected).map((c) => (
+            <p key={c.id}><i style={{ background: c.color }} /> {c.summary}</p>
+          ))}
+          <p className="hint">Read-only · event titles and times</p>
+        </div>
+        <form onSubmit={(e) => { e.preventDefault(); previewSignIn() }}>
+          <label className="field">
+            <span className="field-label">Your name</span>
+            <input autoFocus value={name} maxLength={30} placeholder="e.g. Hyejin" onChange={(e) => setName(e.target.value)} />
+          </label>
+          <Button type="submit">Continue</Button>
+        </form>
+      </Sheet>
     </Screen>
   )
 }

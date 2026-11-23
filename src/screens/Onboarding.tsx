@@ -242,21 +242,23 @@ export function ConnectionsPanel() {
           <span className="row-copy">
             <span className="row-title">Google Calendar</span>
             <span className={`row-sub ${state.googleConnected ? 'text-green strong' : ''}`}>
-              {state.googleConnected ? (demo ? 'Connected · sample calendars' : `Connected${state.user ? ' · ' + state.user.email : ''}`) : 'Not connected'}
+              {state.googleConnected
+                ? demo ? 'Connected · sample calendars' : state.user?.preview || !googleConfigured ? 'Connected · sample calendar (preview)' : `Connected${state.user ? ' · ' + state.user.email : ''}`
+                : 'Not connected'}
             </span>
           </span>
-          {!demo && !local && (
+          {!demo && (!local || !googleConfigured) && (
             state.googleConnected ? (
               <Button variant="ghost" small block={false} disabled={syncing} onClick={() => sync(true)}>
                 <RefreshCw size={15} className={syncing ? 'spin' : ''} /> Sync
               </Button>
             ) : (
-              <Button variant="outline" small block={false} disabled={!googleConfigured || syncing}
+              <Button variant="outline" small block={false} disabled={syncing}
                 onClick={async () => { set({ googleConnected: true }); await sync(true) }}>Connect</Button>
             )
           )}
         </div>
-        {local && <p className="row-sub">Sign in with Google (Settings → Account) to use your calendar. Your timetable works without it.</p>}
+        {local && googleConfigured && <p className="row-sub">Sign in with Google (Settings → Account) to use your calendar. Your timetable works without it.</p>}
         {state.googleConnected && state.calendars.length > 0 && (
           <>
             <p className="mini-label">Use these calendars</p>
@@ -270,7 +272,7 @@ export function ConnectionsPanel() {
                 <i style={{ background: c.color }} />
               </label>
             ))}
-            {lastSync && !demo && <p className="hint">Last synced {lastSync}. Today’s events refresh automatically while the app is open.</p>}
+            {lastSync && !demo && <p className="hint">Last synced {lastSync}. {state.user?.preview || !googleConfigured ? 'Preview mode: sample events. Real Google Calendar sync turns on when the site is connected to Google.' : 'Today’s events refresh automatically while the app is open.'}</p>}
           </>
         )}
         {state.googleConnected && !demo && state.calendars.length === 0 && (

@@ -92,7 +92,7 @@ export interface AlertTypes {
   lowBattery: boolean
 }
 
-export interface User { email: string; name: string; picture?: string; demo?: boolean }
+export interface User { email: string; name: string; picture?: string; demo?: boolean; preview?: boolean }
 
 export interface State {
   user: User | null
@@ -169,6 +169,25 @@ export function newAccountState(user: User | null): State {
 export const signedOutState: State = newAccountState(null)
 
 const demoCourseId = 'c-iv'
+
+/** Sample Google calendars + today's events, used when real Google sign-in isn't configured (preview mode). */
+export function previewCalendar(): Pick<State, 'calendars' | 'gevents' | 'geventsDate' | 'lastSync' | 'googleConnected'> {
+  return {
+    googleConnected: true,
+    calendars: [
+      { id: 'primary', summary: 'My calendar', color: '#3158FF', primary: true, selected: true },
+      { id: 'club', summary: 'Study club', color: '#1FA36B', primary: false, selected: true },
+      { id: 'holidays', summary: 'Holidays in South Korea', color: '#F26A3D', primary: false, selected: false },
+    ],
+    gevents: [
+      { id: 'p1', title: 'Group meeting', start: '16:00', end: '17:00', allDay: false, calendarId: 'primary', location: 'Library 2F' },
+      { id: 'p2', title: 'Paper study', start: '18:00', end: '19:30', allDay: false, calendarId: 'club' },
+      { id: 'p3', title: 'Gym', start: '20:00', end: '21:00', allDay: false, calendarId: 'primary' },
+    ],
+    geventsDate: todayISO(),
+    lastSync: Date.now(),
+  }
+}
 
 /** "Explore the demo": the sample day from the design (Intelligent Vision + Library study, rain from 3 PM). */
 export function demoState(): State {
@@ -403,6 +422,7 @@ function boot(): State {
       if (s) {
         // Demo data is always "today".
         if (s.user?.demo) return { ...s, geventsDate: todayISO(), weather: { ...s.weather, date: todayISO() } }
+        if (s.user?.preview && s.googleConnected) return { ...s, geventsDate: todayISO() }
         return s
       }
     }

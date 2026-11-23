@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ChevronDown, House, LogOut, MapPin, Plus } from 'lucide-react'
-import { useStore } from '../store'
+import { previewCalendar, useStore } from '../store'
 import type { AlertTypes, Feedback } from '../store'
 import { LogoMark } from '../components/icons'
 import {
@@ -38,7 +38,7 @@ export function Settings() {
         <GroupRow to="/settings/account" title={
           <span className="acct">
             {state.user?.picture ? <img src={state.user.picture} alt="" referrerPolicy="no-referrer" /> : <LogoMark size={36} />}
-            <span><b>{state.user?.name ?? 'Guest'}</b><small>{state.user?.demo ? 'Demo profile' : state.user?.email === 'local' ? 'This device only' : state.user?.email}</small></span>
+            <span><b>{state.user?.name ?? 'Guest'}</b><small>{state.user?.demo ? 'Demo profile' : state.user?.email === 'local' ? 'This device only' : state.user?.preview ? 'Google · preview' : state.user?.email}</small></span>
           </span>
         } />
       </Group>
@@ -365,6 +365,17 @@ export function AccountSettings() {
   const google = !!u && !u.demo && u.email !== 'local'
 
   const connectGoogle = async () => {
+    if (!googleConfigured) {
+      // Preview mode: keep this device's data and attach the sample calendar.
+      const { user: _u, ...carry } = state
+      void _u
+      const display = u && !u.demo && u.email !== 'local' ? u.name : 'Tagly user'
+      const s = signIn({ email: `${display.toLowerCase().replace(/[^a-z0-9]+/g, '.') || 'user'}@preview.tagly`, name: display, preview: true }, u?.demo ? undefined : carry)
+      set({ ...previewCalendar(), permissions: { ...s.permissions, calendar: true } })
+      toast({ title: 'Signed in (preview)', body: 'Sample calendar connected.', tone: 'success' })
+      nav(s.onboarded ? '/today' : '/setup/permissions')
+      return
+    }
     setBusy(true)
     try {
       let calOk = true
@@ -389,15 +400,17 @@ export function AccountSettings() {
         {u?.picture ? <img className="avatar" src={u.picture} alt="" referrerPolicy="no-referrer" /> : <LogoMark size={44} />}
         <span className="row-copy">
           <span className="row-title">{u?.name ?? 'Guest'}</span>
-          <span className="row-sub">{u?.demo ? 'Demo profile · sample data' : google ? `Google account · ${u?.email}` : 'This device only · no sign-in'}</span>
+          <span className="row-sub">{u?.demo ? 'Demo profile · sample data' : u?.preview ? 'Google account · preview with a sample calendar' : google ? `Google account · ${u?.email}` : 'This device only · no sign-in'}</span>
         </span>
       </Card>
       {google ? (
-        <p className="hint">Your items, timetable and settings are saved for this account in this browser. Calendar access is read-only.</p>
+        <p className="hint">{u?.preview
+          ? 'Preview mode: Google Calendar sync is shown with sample events. It switches to your real calendar once the site is connected to Google.'
+          : 'Your items, timetable and settings are saved for this account in this browser. Calendar access is read-only.'}</p>
       ) : (
         <>
           <p className="hint">{u?.demo ? 'Sign in to start your own Tagly with your timetable and calendar.' : 'Sign in with Google to use your calendar. What you set up here comes with you.'}</p>
-          <Button disabled={!googleConfigured || busy} onClick={connectGoogle}>{busy ? 'Signing in…' : 'Continue with Google'}</Button>
+          <Button disabled={busy} onClick={connectGoogle}>{busy ? 'Signing in…' : 'Continue with Google'}</Button>
         </>
       )}
       <Button variant="light" onClick={() => { signOutGoogle(); signOut(); nav('/login') }}><LogOut size={17} /> {u?.demo ? 'Leave demo' : 'Sign out'}</Button>

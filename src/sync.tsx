@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { AuthExpiredError, fetchCalendars, fetchTodayEvents, hasValidToken, requestAccess } from './google'
+import { AuthExpiredError, fetchCalendars, fetchTodayEvents, googleConfigured, hasValidToken, requestAccess } from './google'
 import { fetchForecast } from './weather'
-import { todayISO, useStore } from './store'
+import { previewCalendar, todayISO, useStore } from './store'
 import type { GCal, State } from './store'
 
 /** Merge a fresh calendar list with the user's existing on/off choices. */
@@ -30,6 +30,15 @@ export function useCalendarSync() {
   const sync = useCallback(async (interactive: boolean) => {
     const s = stateRef.current
     if (!s.user || s.user.demo) return
+    if (s.user.preview || !googleConfigured) {
+      // Preview mode: sample calendar, keep the user's on/off choices.
+      if (!interactive) return
+      const sample = previewCalendar()
+      const calendars = s.calendars.length ? s.calendars : sample.calendars
+      set({ ...sample, calendars })
+      toast({ title: 'Calendar synced', body: 'Sample calendar · preview mode', tone: 'success' })
+      return
+    }
     if (!hasValidToken(s.user.email)) {
       if (!interactive) return
       await requestAccess({ prompt: '', hint: s.user.email })
@@ -45,7 +54,7 @@ export function useCalendarSync() {
     }
   }, [set, toast])
 
-  return { syncing, sync, needsRefresh: !!state.user && !state.user.demo && state.googleConnected && !hasValidToken(state.user.email) }
+  return { syncing, sync, needsRefresh: !!state.user && !state.user.demo && !state.user.preview && googleConfigured && state.googleConnected && !hasValidToken(state.user.email) }
 }
 
 /** Background refresh of weather + calendar while the app is open. */
