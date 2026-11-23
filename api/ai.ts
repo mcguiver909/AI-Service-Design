@@ -7,7 +7,6 @@
  * Tasks:
  *  - ping:    { ok: true } when a key is configured
  *  - pack:    today's events + forecast + the user's items → { briefing, suggestions[] }
- *  - sticker: a description → { designs[] } using the shop's art and colour lists
  */
 
 const MODEL = process.env.TAGLY_AI_MODEL || 'claude-haiku-5-5'
@@ -23,10 +22,6 @@ Rules:
 - confidence is 0–1.
 - briefing: two short sentences summarising the day and your advice.
 Reply with JSON only: {"briefing": string, "suggestions": [{"name": string, "itemId": string|null, "icon": string, "reason": string, "confidence": number}]}`
-
-const STICKER_SYSTEM = `You design die-cut stickers for a sticker shop. Given a description (Korean or English), pick 3 designs.
-Each design uses one art from the allowed arts and two colours from the allowed palette (hex strings exactly as given): "color" for the body and a contrasting "accent".
-Give each a short name (2–3 words, English). Reply with JSON only: {"designs": [{"art": string, "color": string, "accent": string, "name": string}]}`
 
 type Json = Record<string, unknown>
 
@@ -63,12 +58,6 @@ export default async function handler(req: any, res: any) {
       const { task: _t, ...input } = body
       void _t
       const out = await callClaude(PACK_SYSTEM, input, 700)
-      res.status(200).json(out)
-      return
-    }
-    if (body.task === 'sticker') {
-      const prompt = String(body.prompt ?? '').slice(0, 200)
-      const out = await callClaude(STICKER_SYSTEM, { description: prompt, arts: body.arts, palette: body.palette }, 400)
       res.status(200).json(out)
       return
     }

@@ -26,7 +26,6 @@ Mobile web app built from the Tagly Figma prototype (flows) and UI spec (visual 
   - sticker tags: build a pack slot by slot, pick from the gallery or customise art, main/accent colours (18), or clear stickers
   - keyring hub (Ø 38 mm): shell colour, matte/glossy/metallic finish, key ring, strap, engraving, LED light preview
   - hub cases (silicone, bear/bunny/cat ears, cloud, heart, clear, leather): any colour, finish and pattern (polka dots, stripes, checker, gingham, hearts)
-  - **Describe a sticker**: type a few words (Korean or English) and get three designs to customise (Claude when configured, otherwise on-device)
   - bag, demo checkout (no payment details collected, nothing charged) and order confirmation
 
 Stickers, keyring and Bluetooth are simulated.
