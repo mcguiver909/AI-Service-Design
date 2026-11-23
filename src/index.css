@@ -590,7 +590,11 @@ h1 { font-size: 30px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.
 .preview-cal i { width: 9px; height: 9px; border-radius: 50%; }
 
 /* Tagly AI -------------------------------------------------------------- */
-.ai-card { background: linear-gradient(160deg, #f3f1ff 0%, #eef3ff 55%, #ffffff 100%); box-shadow: inset 0 0 0 1.5px #dcd6ff, var(--shadow); display: flex; flex-direction: column; gap: 10px; }
+.ai-card { background: linear-gradient(160deg, #f4f2ff 0%, #f0f4ff 100%); border-radius: 20px; padding: 14px 14px 12px; box-shadow: inset 0 0 0 1px #e1dbff; display: flex; flex-direction: column; gap: 8px; }
+.ai-sub, .ai-none { font-size: 13px; color: var(--muted); padding-left: 2px; }
+.ai-add { display: inline-flex; align-items: center; gap: 3px; height: 32px; padding: 0 12px 0 9px; border-radius: 999px; background: var(--blue); color: #fff; font-weight: 650; font-size: 13.5px; flex-shrink: 0; }
+.ai-x { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: var(--muted); flex-shrink: 0; }
+.greet { display: block; line-height: 1.12; }
 .ai-head { display: flex; align-items: center; gap: 8px; }
 .ai-head b { font-size: 15px; }
 .ai-mark { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #7357e0, #3158ff); }
@@ -600,7 +604,7 @@ h1 { font-size: 30px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.
 @keyframes aipulse { 50% { opacity: 0.55; } }
 .ai-brief { font-size: 14.5px; line-height: 1.5; color: var(--ink); }
 .ai-list { display: flex; flex-direction: column; gap: 8px; }
-.ai-sugg { display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 14px; padding: 10px 8px 10px 10px; box-shadow: 0 1px 2px rgba(18, 22, 28, 0.06); }
+.ai-sugg { display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 14px; padding: 9px 6px 9px 10px; box-shadow: 0 1px 2px rgba(18, 22, 28, 0.06); }
 .ai-sugg .row-copy { gap: 3px; }
 .ai-new { font-style: normal; font-size: 10.5px; font-weight: 700; color: #7357e0; background: #efeaff; padding: 2px 6px; border-radius: 6px; margin-left: 6px; vertical-align: 2px; }
 .ai-conf { display: flex; align-items: center; gap: 7px; }
@@ -639,3 +643,29 @@ h1 { font-size: 30px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.
 .dep-miss .row-sub svg { vertical-align: -1px; }
 
 .risk-line svg { vertical-align: -1px; margin-right: 2px; }
+
+/* Items / Stickers tabs ------------------------------------------------- */
+.seg { display: flex; background: #e9ecf1; border-radius: 12px; padding: 3px; flex-shrink: 0; }
+.seg button { flex: 1; height: 36px; border-radius: 10px; font-weight: 600; font-size: 14px; color: var(--muted); }
+.seg button.on { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(18, 22, 28, 0.12); }
+.st-glyph { display: grid; place-items: center; border-radius: 50%; flex-shrink: 0; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7), 0 1px 3px rgba(18, 22, 28, 0.15); }
+.st-glyph.clear { background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.95), rgba(214, 224, 238, 0.6)); box-shadow: inset 0 0 0 1.5px #c9d2df, 0 1px 3px rgba(18, 22, 28, 0.1); }
+.st-glyph i { width: 26%; height: 26%; border-radius: 50%; background: #12161c; opacity: 0.85; }
+.st-summary { display: flex; flex-direction: column; gap: 12px; }
+.st-counts { display: flex; justify-content: space-between; text-align: center; }
+.st-counts span { flex: 1; display: flex; flex-direction: column; font-size: 12.5px; color: var(--muted); }
+.st-counts b { font-size: 22px; color: var(--ink); }
+.st-label { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; padding: 2px 4px 0; }
+.st-list { display: flex; flex-direction: column; gap: 8px; }
+.st-row { display: flex; align-items: center; gap: 12px; background: #fff; border-radius: 16px; padding: 12px 12px 12px 14px; text-align: left; box-shadow: var(--shadow); width: 100%; }
+.st-row .row-title small { font-weight: 500; color: var(--muted); font-size: 13px; }
+.st-on { display: flex; align-items: center; gap: 6px; }
+.st-batt { font-weight: 600; font-size: 13px; color: var(--muted); }
+.st-item { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 6px 0; }
+.st-item .batt-line { flex-shrink: 0; }
+.st-pick { display: flex; flex-direction: column; gap: 4px; max-height: 46vh; overflow-y: auto; }
+.st-pick .st-item { padding: 8px 4px; border-bottom: 1px solid #f0f2f5; }
+.st-choose { display: flex; flex-direction: column; gap: 8px; }
+.st-choose .chip { padding: 7px 13px; gap: 6px; }
+.st-choose .chip.on { background: var(--ink); color: #fff; box-shadow: none; }
+.chip > .st-glyph, .st-choose .chip > .st-glyph { padding: 0; flex: none; }

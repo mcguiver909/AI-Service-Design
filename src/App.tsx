@@ -11,6 +11,7 @@ import { EditPackingList, Today } from './screens/Today'
 import { AddItem, EditItem, ItemDetail, Items } from './screens/Items'
 import { Directions, Find, Ring } from './screens/Find'
 import { AiSettings, DepartureDemo } from './screens/Ai'
+import { RegisterStickers, StickerDetail } from './screens/Stickers'
 import {
   AccountSettings, ConnectionsSettings, HelpSettings, KeyringSettings, NotificationDemo,
   NotificationSettings, PlacesSettings, PrivacySettings, Settings,
@@ -48,6 +49,9 @@ const guarded: [string, ReactNode][] = [
   ['/today/edit', <EditPackingList />],
   ['/items', <Items />],
   ['/items/new', <AddItem />],
+  ['/items/stickers', <Items tab="stickers" />],
+  ['/items/stickers/new', <RegisterStickers />],
+  ['/items/stickers/:id', <StickerDetail />],
   ['/items/:id', <ItemDetail />],
   ['/items/:id/edit', <EditItem />],
   ['/find', <Find />],

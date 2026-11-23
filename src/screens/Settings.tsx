@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ChevronDown, House, LogOut, MapPin, Plus } from 'lucide-react'
-import { previewCalendar, useStore } from '../store'
+import { greetName, previewCalendar, useStore } from '../store'
 import type { AlertTypes, Feedback } from '../store'
 import { LogoMark } from '../components/icons'
 import {
@@ -367,6 +367,8 @@ export function AccountSettings() {
   const { state, signIn, signOut, set, toast } = useStore()
   const nav = useNavigate()
   const [busy, setBusy] = useState(false)
+  const [nickOpen, setNickOpen] = useState(false)
+  const [nick, setNick] = useState('')
   const u = state.user
   const google = !!u && !u.demo && u.email !== 'local'
 
@@ -409,6 +411,28 @@ export function AccountSettings() {
           <span className="row-sub">{u?.demo ? 'Demo profile · sample data' : u?.preview ? 'Google account · preview with a sample calendar' : google ? `Google account · ${u?.email}` : 'This device only · no sign-in'}</span>
         </span>
       </Card>
+      {u && (
+        <Group>
+          <GroupRow title="Nickname" sub="Used in “Good morning, …” on Today" value={greetName(state) || 'Not set'}
+            onClick={() => { setNick(greetName(state)); setNickOpen(true) }} />
+        </Group>
+      )}
+      <Sheet open={nickOpen} onClose={() => setNickOpen(false)} title="Nickname">
+        <h2 className="sheet-title">What should Tagly call you?</h2>
+        <form className="stack" onSubmit={(e) => {
+          e.preventDefault()
+          if (!u) return
+          set({ user: { ...u, nickname: nick.trim() } })
+          toast({ title: nick.trim() ? `Hi, ${nick.trim()}!` : 'Nickname cleared', tone: 'success' })
+          setNickOpen(false)
+        }}>
+          <label className="field">
+            <span className="field-label">Nickname</span>
+            <input value={nick} maxLength={20} autoFocus placeholder="e.g. Hyejin" onChange={(e) => setNick(e.target.value)} />
+          </label>
+          <Button type="submit">Save</Button>
+        </form>
+      </Sheet>
       {google ? (
         <p className="hint">{u?.preview
           ? 'Preview mode: Google Calendar sync is shown with sample events. It switches to your real calendar once the site is connected to Google.'

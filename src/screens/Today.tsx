@@ -3,7 +3,7 @@ import {
   Check, Cloud, CloudFog, CloudLightning, CloudRain, CloudSun, MapPin, RefreshCw, Snowflake, Sparkles, Sun, Umbrella,
 } from 'lucide-react'
 import type { LucideProps } from 'lucide-react'
-import { activeEvents, eventItems, packingList, useStore } from '../store'
+import { activeEvents, eventItems, greetName, greeting, packingList, useStore } from '../store'
 import { forgetRisk, pct } from '../ai'
 import { AiCard } from '../components/AiCard'
 import { codeGroup, codeText, hourLabel } from '../weather'
@@ -148,8 +148,12 @@ export function Today() {
 
   return (
     <Screen tabs>
-      <PageHead eyebrow={todayLabel()} title="Today" action={keyringPill} />
+      <PageHead eyebrow={todayLabel()} title={<span className="greet">{greeting()}{greetName(state) ? <>,<br />{greetName(state)}</> : ''}</span>} action={keyringPill} />
 
+      <Schedule />
+      <WeatherCard />
+
+      <Section title="Packing list" action={state.items.length > 0 ? <button type="button" className="text-link small" onClick={() => nav('/today/edit')}>Edit</button> : undefined}>
       {list.length > 0 && (
         <Card className={`progress-card ${allPacked ? 'tone-green' : ''}`}>
           <div className="pc-head">
@@ -161,11 +165,6 @@ export function Today() {
         </Card>
       )}
 
-      <AiCard />
-      <WeatherCard />
-      <Schedule />
-
-      <Section title="Packing list" action={state.items.length > 0 ? <button type="button" className="text-link small" onClick={() => nav('/today/edit')}>Edit</button> : undefined}>
         <div className="stack">
           {list.map(({ item, reason, packed: ok }) => (
             <Row key={item.id}
@@ -204,6 +203,8 @@ export function Today() {
           <p className="hint">No keyring paired, so tap <b>Pack</b> as you put each item in your bag.</p>
         )}
       </Section>
+
+      <AiCard />
     </Screen>
   )
 }

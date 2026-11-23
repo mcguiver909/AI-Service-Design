@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, NavLink, Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
-  ArrowRight, Check, ChevronLeft, ChevronRight, ImagePlus, Minus, Package, Plus, RotateCcw, ShoppingBag, Smartphone, Sparkles, Trash2, Truck, Upload,
+  ArrowRight, Check, ChevronLeft, ChevronRight, ImagePlus, Minus, Package, Play, Plus, RotateCcw, ShoppingBag, Smartphone, Sparkles, Trash2, Truck, Upload, X,
 } from 'lucide-react'
 import {
   ENGRAVING_FEE, FREE_SHIPPING_FROM, PATTERN_FEE, SHIPPING_EXPRESS, STRAP_FEE, ShopProvider, art, artInfo, artOrder, byId, caseColors, caseInfo, casePrice, cases, finishes, patterns,
@@ -120,15 +120,46 @@ function ShopLayout({ children }: { children: ReactNode }) {
 const pinkHub: HubDesign = { ...defaultHub, shell: '#F6C6B8', strap: '#F26A3D' }
 const midnightHub: HubDesign = { ...defaultHub, shell: '#1E2433', loop: 'black', strap: null, engraving: 'TAGLY' }
 
+const INTRO_KEY = 'tagly-shop-intro-seen'
+
+/** "Meet Tagly" film, shown once on the first visit to the store. */
+function IntroFilm({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const video = useRef<HTMLVideoElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    document.body.style.overflow = 'hidden'
+    return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = '' }
+  }, [open, onClose])
+  if (!open) return null
+  return (
+    <div className="intro-film" role="dialog" aria-modal="true" aria-labelledby="intro-title" onClick={onClose}>
+      <div className="intro-box" onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="intro-x" aria-label="Close video" onClick={onClose}><X size={20} /></button>
+        <p className="intro-kicker">Introducing</p>
+        <h2 id="intro-title">Meet Tagly.</h2>
+        <p className="intro-sub">Stickers that remember. A keyring that taps you before you walk away.</p>
+        <video ref={video} className="intro-video" src="/media/meet-tagly.mp4" poster="/media/meet-tagly.jpg"
+          autoPlay muted playsInline controls preload="auto" />
+      </div>
+    </div>
+  )
+}
+
 function ShopHome() {
   const sig = signaturePack()
   const setSkins = (k: SetKey) => gallery.filter((g) => g.set === k).slice(0, 3).map((g) => g.design)
+  const [film, setFilm] = useState(() => { try { return !localStorage.getItem(INTRO_KEY) } catch { return true } })
+  const closeFilm = useCallback(() => { setFilm(false); try { localStorage.setItem(INTRO_KEY, '1') } catch { /* ignore */ } }, [])
   return (
     <>
+      <IntroFilm open={film} onClose={closeFilm} />
       <section className="shop-wrap store-top">
         <h1 className="store-title">Store</h1>
         <div className="store-top-side">
           <p>Your bag remembers<br />what you forget.</p>
+          <button type="button" className="slink" onClick={() => setFilm(true)}><Play size={13} fill="currentColor" /> Watch the film</button>
           <Link to="/shop/gallery" className="slink">Browse the design gallery <ArrowRight size={14} /></Link>
           <Link to="/" className="slink">Open the Tagly app <ArrowRight size={14} /></Link>
         </div>

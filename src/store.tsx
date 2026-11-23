@@ -109,7 +109,17 @@ export type AiFeedback = Record<string, { yes: number; no: number }>
 
 export interface AiSettings { on: boolean; cloud: boolean }
 
-export interface User { email: string; name: string; picture?: string; demo?: boolean; preview?: boolean }
+/** A registered sticker tag. Attached to at most one item (Item.stickerId). */
+export interface Sticker {
+  id: string
+  battery: number
+  addedAt: string
+  /** Its design skin, e.g. "Clear", "Comet". */
+  skin: string
+}
+
+/** nickname: what Tagly calls you ("Good morning, …"). */
+export interface User { email: string; name: string; nickname?: string; picture?: string; demo?: boolean; preview?: boolean }
 
 export interface State {
   user: User | null
@@ -142,6 +152,7 @@ export interface State {
   /** Today's accepted / dismissed AI suggestions. reasons: itemId → why it was added. */
   aiToday: { date: string; reasons: Record<string, string>; dismissed: string[] }
   history: DayLog[]
+  stickers: Sticker[]
 }
 
 /* ------------------------------------------------------------------ */
@@ -189,7 +200,39 @@ export function newAccountState(user: User | null): State {
     aiFeedback: {},
     aiToday: { date: todayISO(), reasons: {}, dismissed: [] },
     history: [],
+    stickers: [],
   }
+}
+
+/** Make sure every item's sticker is in the sticker list. */
+export function withStickers(s: State): State {
+  const known = new Set((s.stickers ?? []).map((x) => x.id))
+  const missing = s.items.filter((i) => i.stickerId && !known.has(i.stickerId))
+    .map((i) => ({ id: i.stickerId, battery: i.battery, addedAt: todayISO(), skin: 'Clear' }))
+  return missing.length || !s.stickers ? { ...s, stickers: [...(s.stickers ?? []), ...missing] } : s
+}
+
+/** The item a sticker is on, if any. */
+export function stickerItem(state: State, id: string) {
+  return state.items.find((i) => i.stickerId === id)
+}
+
+export function stickerBattery(state: State, st: Sticker) {
+  return stickerItem(state, st.id)?.battery ?? st.battery
+}
+
+/** Nickname or first name for greetings. */
+export function greetName(state: State) {
+  const u = state.user
+  if (!u) return ''
+  if (u.nickname?.trim()) return u.nickname.trim()
+  if (u.demo || u.email === 'local' || u.name === 'You') return ''
+  return u.name.split(/\s+/)[0]
+}
+
+export function greeting(d = new Date()) {
+  const h = d.getHours()
+  return h < 5 ? 'Good evening' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'
 }
 
 export const signedOutState: State = newAccountState(null)
@@ -240,7 +283,7 @@ export function demoHistory(classDay: number): DayLog[] {
 /** "Explore the demo": the sample day from the design (Intelligent Vision + Library study, rain from 3 PM). */
 export function demoState(): State {
   const today = new Date().getDay()
-  const base = newAccountState({ email: 'demo', name: 'Tagly explorer', demo: true })
+  const base = newAccountState({ email: 'demo', name: 'Tagly explorer', nickname: 'Explorer', demo: true })
   return {
     ...base,
     onboarded: true,
@@ -266,6 +309,15 @@ export function demoState(): State {
       hours: [9, 10, 11, 12, 13, 14, 15, 16].map((h) => ({ h, temp: h < 13 ? 10 + (h - 9) : 14 - Math.max(0, h - 14), pop: h >= 15 ? 80 : h >= 13 ? 40 : 10, code: h >= 15 ? 61 : h >= 13 ? 3 : 2 })),
     },
     history: demoHistory(today),
+    stickers: [
+      { id: 'TG-31C7', battery: 84, addedAt: '2026-09-01', skin: 'Clear' },
+      { id: 'TG-9A10', battery: 61, addedAt: '2026-09-01', skin: 'Clear' },
+      { id: 'TG-4F2A', battery: 72, addedAt: '2026-09-01', skin: 'Bloom' },
+      { id: 'TG-7E05', battery: 90, addedAt: '2026-09-01', skin: 'Drizzle' },
+      { id: 'TG-2B88', battery: 12, addedAt: '2026-09-01', skin: 'Note' },
+      { id: 'TG-5D31', battery: 100, addedAt: '2026-11-02', skin: 'Clear' },
+      { id: 'TG-A7E2', battery: 100, addedAt: '2026-11-02', skin: 'Comet' },
+    ],
     items: [
       { id: 'laptop', name: 'Laptop', icon: 'laptop', color: 'yellow', stickerId: 'TG-31C7', battery: 84, status: 'inBag',
         rule: { ...emptyRule, events: true, keywords: ['Study', 'Meeting'] } },
@@ -302,6 +354,9 @@ type Action =
   | { type: 'aiDismiss'; key: string; keys: string[] }
   | { type: 'aiResetLearning' }
   | { type: 'logDay'; log: DayLog }
+  | { type: 'registerStickers'; stickers: Sticker[] }
+  | { type: 'attachSticker'; stickerId: string; itemId: string | null }
+  | { type: 'removeSticker'; id: string }
 
 function freshAiToday(state: State) {
   return state.aiToday.date === todayISO() ? state.aiToday : { date: todayISO(), reasons: {}, dismissed: [] }
@@ -315,11 +370,41 @@ function reducer(state: State, action: Action): State {
       return action.state
     case 'upsertItem': {
       const exists = state.items.some((i) => i.id === action.item.id)
-      return {
+      return withStickers({
         ...state,
         items: exists ? state.items.map((i) => (i.id === action.item.id ? action.item : i)) : [...state.items, action.item],
-      }
+      })
     }
+    case 'registerStickers': {
+      const have = new Set(state.stickers.map((x) => x.id))
+      return { ...state, stickers: [...state.stickers, ...action.stickers.filter((x) => !have.has(x.id))] }
+    }
+    case 'attachSticker': {
+      const { stickerId, itemId } = action
+      const st = state.stickers.find((x) => x.id === stickerId)
+      if (!st) return state
+      const from = stickerItem(state, stickerId)
+      // The sticker remembers its own battery while it isn't on an item.
+      const stickers = state.stickers.map((x) => {
+        if (x.id === stickerId && from) return { ...x, battery: from.battery }
+        const target = itemId ? state.items.find((i) => i.id === itemId) : undefined
+        if (target && x.id === target.stickerId) return { ...x, battery: target.battery }
+        return x
+      })
+      const battery = (from?.battery ?? st.battery)
+      const items = state.items.map((i) => {
+        if (i.id === itemId) return { ...i, stickerId, battery }
+        if (i.stickerId === stickerId) return { ...i, stickerId: '' }
+        return i
+      })
+      return { ...state, stickers, items }
+    }
+    case 'removeSticker':
+      return {
+        ...state,
+        stickers: state.stickers.filter((x) => x.id !== action.id),
+        items: state.items.map((i) => (i.stickerId === action.id ? { ...i, stickerId: '' } : i)),
+      }
     case 'updateItem':
       return { ...state, items: state.items.map((i) => (i.id === action.id ? { ...i, ...action.patch } : i)) }
     case 'removeItem':
@@ -478,7 +563,7 @@ function readState(account: string): State | null {
     const base = newAccountState(parsed.user ?? null)
     const merged = { ...base, ...parsed }
     merged.items = (merged.items ?? []).map((i) => ({ ...i, rule: { ...emptyRule, ...i.rule } }))
-    return merged
+    return withStickers(merged)
   } catch {
     return null
   }

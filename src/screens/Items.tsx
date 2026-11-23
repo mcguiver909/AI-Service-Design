@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { BatteryMedium, Plus, Sparkles } from 'lucide-react'
-import { emptyRule, locationLine, newId, randomStickerId, useStore } from '../store'
+import { BatteryMedium, Link2, Plus, ScanLine, Sparkles } from 'lucide-react'
+import { emptyRule, locationLine, newId, randomStickerId, stickerItem, useStore } from '../store'
 import type { IconKey, ItemStatus } from '../store'
 import { ItemTile, itemIcons } from '../components/icons'
 import { draftFromItem, ItemForm, StickerCard, useStickerScan } from '../components/ItemForm'
@@ -9,10 +9,11 @@ import { MapView } from '../components/MapView'
 import { RuleEditor } from '../components/RuleEditor'
 import { Button, Card, Meter, PageHead, PulseRings, Row, Screen, Sheet, StatusBadge } from '../components/ui'
 import { usePairing, PairingPanel } from './Onboarding'
+import { StickerGlyph, StickersPanel } from './Stickers'
 
 type Filter = 'all' | ItemStatus
 
-export function Items() {
+export function Items({ tab = 'items' }: { tab?: 'items' | 'stickers' }) {
   const { state } = useStore()
   const nav = useNavigate()
   const [filter, setFilter] = useState<Filter>('all')
@@ -28,9 +29,17 @@ export function Items() {
 
   return (
     <Screen tabs>
-      <PageHead title="Items" action={
-        <Button small block={false} onClick={() => nav('/items/new')}><Plus size={17} /> Add item</Button>
+      <PageHead title="Items" action={tab === 'items'
+        ? <Button small block={false} onClick={() => nav('/items/new')}><Plus size={17} /> Add item</Button>
+        : <Button small block={false} onClick={() => nav('/items/stickers/new')}><ScanLine size={17} /> Register</Button>
       } />
+
+      <div className="seg" role="tablist">
+        <button type="button" role="tab" aria-selected={tab === 'items'} className={tab === 'items' ? 'on' : ''} onClick={() => nav('/items')}>Items {state.items.length}</button>
+        <button type="button" role="tab" aria-selected={tab === 'stickers'} className={tab === 'stickers' ? 'on' : ''} onClick={() => nav('/items/stickers')}>Stickers {state.stickers.length}</button>
+      </div>
+
+      {tab === 'stickers' ? <StickersPanel /> : <>
 
       <Card className="keyring-row" onClick={() => nav('/settings/keyring')}>
         <span className="ring-ico" />
@@ -61,7 +70,7 @@ export function Items() {
               <span className="trail-stack">
                 <StatusBadge status={item.status} />
                 <small className={item.battery < 20 ? 'text-red' : ''}>
-                  Sticker {item.battery}%{item.battery < 20 ? ' · replace soon' : ''}
+                  {item.stickerId ? <>{item.stickerId} · {item.battery}%{item.battery < 20 ? ' · replace soon' : ''}</> : 'No sticker'}
                 </small>
               </span>
             }
@@ -70,6 +79,7 @@ export function Items() {
         {shown.length === 0 && <p className="empty">No items here.</p>}
       </div>
       <button type="button" className="ghost-link" onClick={() => nav('/shop/design/stickers')}>Running low on stickers? Design a new pack</button>
+      </>}
     </Screen>
   )
 }
@@ -136,8 +146,18 @@ export function ItemDetail() {
       </Card>
 
       <Card>
-        <div className="kc-line"><b>Sticker battery</b><span className="batt-line"><Meter value={item.battery} /> <b>{item.battery}%</b></span></div>
-        <p className="row-sub">Sticker {item.stickerId}{item.battery < 20 ? ' · replace soon' : ''}</p>
+        {item.stickerId ? (
+          <button type="button" className="st-item" onClick={() => nav(`/items/stickers/${item.stickerId}`)}>
+            <StickerGlyph skin={state.stickers.find((x) => x.id === item.stickerId)?.skin ?? 'Clear'} size={36} />
+            <span className="row-copy"><span className="row-title">Sticker {item.stickerId}</span><span className="row-sub">{item.battery < 20 ? 'Battery low · replace soon' : 'Manage, move or swap this sticker'}</span></span>
+            <span className="batt-line"><Meter value={item.battery} /> <b>{item.battery}%</b></span>
+          </button>
+        ) : (
+          <div className="inbag">
+            <span className="row-copy"><span className="row-title">No sticker</span><span className="row-sub">Not tracked until a sticker is attached</span></span>
+            <Button variant="blue" small block={false} onClick={() => nav('/items/stickers')}><Link2 size={15} /> Attach</Button>
+          </div>
+        )}
         <div className="btn-trio">
           <Button variant="outline" onClick={() => setRepair(true)}>Re-pair</Button>
           <Button variant="outline" onClick={() => nav(`/items/${item.id}/edit`)}>Edit</Button>
@@ -192,18 +212,37 @@ export function AddItem() {
   const [params] = useSearchParams()
   const aiReason = params.get('ai')
   const presetIcon = (Object.keys(itemIcons) as IconKey[]).find((k) => k === params.get('icon'))
-  const detected = useStickerScan()
-  const [stickerId] = useState(randomStickerId)
+  const { state } = useStore()
+  const free = state.stickers.filter((x) => !stickerItem(state, x.id))
+  const [chosen, setChosen] = useState<string | null>(() => free.find((x) => x.id === params.get('sticker'))?.id ?? null)
+  const scanned = useStickerScan()
+  const [newSticker] = useState(randomStickerId)
+  const stickerId = chosen ?? newSticker
+  const detected = chosen ? true : scanned
   return (
     <Screen tabs>
       <PageHead back={aiReason ? '/today' : '/items'} backLabel={aiReason ? 'Today' : 'Items'} title="Add an item" sub="Peel a clear sticker, press it onto the item, then hold your phone near it." />
       {aiReason && <p className="ai-from"><Sparkles size={14} /> Suggested by Tagly AI · {aiReason}</p>}
+      {free.length > 0 && (
+        <div className="st-choose">
+          <span className="field-label">Sticker</span>
+          <div className="chips">
+            <button type="button" className={`chip ${chosen === null ? 'on' : ''}`} onClick={() => setChosen(null)}><ScanLine size={14} /> Scan a new one</button>
+            {free.map((x) => (
+              <button key={x.id} type="button" className={`chip ${chosen === x.id ? 'on' : ''}`} onClick={() => setChosen(x.id)}>
+                <StickerGlyph skin={x.skin} size={16} /> {x.id}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <StickerCard stickerId={stickerId} detected={detected} />
-      <ItemForm detected={detected} submitLabel="Save item"
+      <ItemForm key={stickerId} detected={detected} submitLabel="Save item"
         initial={{ name: params.get('name') ?? '', icon: presetIcon ?? 'bottle', color: 'sky', stickerId, rule: aiReason ? { ...emptyRule } : { ...emptyRule, always: true } }}
         onSubmit={(d) => {
           const id = newId(d.name)
-          dispatch({ type: 'upsertItem', item: { id, name: d.name, icon: d.icon, color: d.color, rule: d.rule, stickerId, battery: 100, status: 'withYou' } })
+          const battery = state.stickers.find((x) => x.id === stickerId)?.battery ?? 100
+          dispatch({ type: 'upsertItem', item: { id, name: d.name, icon: d.icon, color: d.color, rule: d.rule, stickerId, battery, status: 'withYou' } })
           if (aiReason) {
             dispatch({ type: 'aiAccept', itemId: id, reason: aiReason, keys: (params.get('keys') ?? '').split(',').filter(Boolean) })
             toast({ title: `${d.name} tagged and added to today`, body: aiReason, tone: 'success' })
