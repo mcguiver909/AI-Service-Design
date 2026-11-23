@@ -251,7 +251,31 @@ function ClearSkin({ d, showAntenna = true }: { d: StickerDesign; showAntenna?: 
   )
 }
 
-export function StickerArt({ d, showAntenna }: { d: StickerDesign; showAntenna?: boolean }) {
+function PhotoSkin({ d, showCut }: { d: StickerDesign; showCut?: boolean }) {
+  const uid = uidOf(useId())
+  if (!d.photo) {
+    return (
+      <svg viewBox="0 0 200 200" className="sticker-art" role="img" aria-label="Upload placeholder">
+        <rect x="24" y="24" width="152" height="152" rx="30" fill="rgba(255,255,255,0.6)" stroke="#B9C0CB" strokeWidth="3" strokeDasharray="8 7" />
+        <path d="M100 76 V 124 M 80 96 L100 76 L120 96" fill="none" stroke="#8A93A3" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    )
+  }
+  return (
+    <svg viewBox="0 0 200 200" className="sticker-art" role="img" aria-label="Your uploaded sticker">
+      <defs>
+        <filter id={`ps${uid}`} x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#12161C" floodOpacity="0.25" />
+        </filter>
+      </defs>
+      <image href={d.photo} x="0" y="0" width="200" height="200" filter={`url(#ps${uid})`} />
+      {showCut && d.cutline && <image href={d.cutline} x="0" y="0" width="200" height="200" />}
+    </svg>
+  )
+}
+
+export function StickerArt({ d, showAntenna, showCut }: { d: StickerDesign; showAntenna?: boolean; showCut?: boolean }) {
+  if (d.style === 'photo') return <PhotoSkin d={d} showCut={showCut} />
   return d.style === 'clear' ? <ClearSkin d={d} showAntenna={showAntenna} /> : <ArtSkin d={d} />
 }
 

@@ -2,11 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, NavLink, Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
-  ArrowRight, Check, ChevronLeft, ChevronRight, Minus, Package, Plus, RotateCcw, ShoppingBag, Smartphone, Trash2, Truck,
+  ArrowRight, Check, ChevronLeft, ChevronRight, ImagePlus, Minus, Package, Plus, RotateCcw, ShoppingBag, Smartphone, Trash2, Truck, Upload,
 } from 'lucide-react'
 import {
   ENGRAVING_FEE, FREE_SHIPPING_FROM, PATTERN_FEE, SHIPPING_EXPRESS, STRAP_FEE, ShopProvider, art, artInfo, artOrder, byId, caseColors, caseInfo, casePrice, cases, finishes, patterns,
-  basicPack, basicSticker, colorName, defaultHub, designLabel, fitPack, gallery, kitPacks, packSizes, products, sets, shellColors, shippingFor, signaturePack,
+  baseSticker, basicPack, basicSticker, colorName, defaultHub, designLabel, fitPack, gallery, kitPacks, packSizes, products, sets, shellColors, shippingFor, signaturePack,
   stickerColors, strapColors, unitPrice, useShop, won,
 } from './shopStore'
 import type {
@@ -15,6 +15,8 @@ import type {
 import { CaseArt, HubArt, StickerArt, fabricStyle, fabrics } from './Previews'
 import type { FabricKey, LedState } from './Previews'
 import { LogoMark } from '../components/icons'
+import { loadImage, makeDieCut } from './diecut'
+import type { CutShape } from './diecut'
 import './shop.css'
 
 /* Shared bits ---------------------------------------------------------------------- */
@@ -208,12 +210,19 @@ function ShopHome() {
 
 /* Gallery ------------------------------------------------------------------------------- */
 
-function GalleryGrid({ setFilter, color, onPick, compact = false, selectedId }: {
-  setFilter: SetKey | 'all'; color: string | null; onPick: (id: string) => void; compact?: boolean; selectedId?: string
+function GalleryGrid({ setFilter, color, onPick, compact = false, selectedId, onUpload }: {
+  setFilter: SetKey | 'all'; color: string | null; onPick: (id: string) => void; compact?: boolean; selectedId?: string; onUpload?: () => void
 }) {
   const list = gallery.filter((g) => (setFilter === 'all' || g.set === setFilter) && (!color || g.design.color === color || g.design.frameColor === color && g.set === 'clear'))
   return (
     <div className={`gal-grid ${compact ? 'compact' : ''}`}>
+      {onUpload && setFilter === 'all' && !color && (
+        <button type="button" className="gal-card upload" onClick={onUpload}>
+          <span className="gal-img"><ImagePlus size={compact ? 26 : 40} strokeWidth={1.6} /><b>{compact ? 'Upload' : 'Upload your own'}</b></span>
+          <span className="gal-name">{compact ? 'Your image' : 'Your image'}</span>
+          {!compact && <span className="gal-set">PNG or JPEG · cut line made for you</span>}
+        </button>
+      )}
       {list.map((g) => {
         const tint = sets.find((s) => s.key === g.set)!.tint
         return (
@@ -276,7 +285,7 @@ function Gallery() {
               <Link to={`/shop/design/stickers?set=${setFilter}`} className="sbtn sbtn-dark">Get the whole set <ArrowRight size={16} /></Link>
             </div>
           )}
-          <GalleryGrid setFilter={setFilter} color={color} onPick={(id) => nav(`/shop/design/stickers?design=${id}`)} />
+          <GalleryGrid setFilter={setFilter} color={color} onPick={(id) => nav(`/shop/design/stickers?design=${id}`)} onUpload={() => nav('/shop/design/stickers?upload=1')} />
         </>
       ) : (
         <div className="case-grid">
@@ -306,13 +315,95 @@ const dotOpts: { key: DotMark; label: string }[] = [
   { key: 'logo', label: 'Tagly t' }, { key: 'heart', label: 'Heart' }, { key: 'star', label: 'Star' }, { key: 'initials', label: 'Initials' },
 ]
 
+const borderOpts = [{ key: 'thin', label: 'Thin', v: 0.028 }, { key: 'regular', label: 'Regular', v: 0.045 }, { key: 'thick', label: 'Thick', v: 0.068 }] as const
+
+function PhotoUploader({ d, set }: { d: StickerDesign; set: (d: StickerDesign) => void }) {
+  const [img, setImg] = useState<HTMLImageElement | null>(null)
+  const [cut, setCut] = useState<CutShape>(d.cut ?? 'shape')
+  const [border, setBorder] = useState<'thin' | 'regular' | 'thick'>('regular')
+  const [removeBg, setRemoveBg] = useState(true)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [info, setInfo] = useState<{ hasAlpha: boolean; foundSubject: boolean } | null>(null)
+  const [drag, setDrag] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  const run = (image: HTMLImageElement, c: CutShape, b: typeof border, r: boolean) => {
+    setBusy(true)
+    setError('')
+    window.setTimeout(() => {
+      try {
+        const res = makeDieCut(image, { cut: c, border: borderOpts.find((o) => o.key === b)!.v, removeBg: r })
+        set({ ...d, style: 'photo', photo: res.photo, cutline: res.cutline, cut: c })
+        setInfo({ hasAlpha: res.hasAlpha, foundSubject: res.foundSubject })
+      } catch (e) {
+        setError((e as Error).message || 'Something went wrong making the cut line.')
+      } finally {
+        setBusy(false)
+      }
+    }, 30)
+  }
+  const onFile = async (file?: File | null) => {
+    if (!file) return
+    try {
+      const image = await loadImage(file)
+      setImg(image)
+      run(image, cut, border, removeBg)
+    } catch (e) {
+      setError((e as Error).message)
+    }
+  }
+
+  return (
+    <>
+      <div className={`dropzone ${drag ? 'drag' : ''} ${d.photo ? 'has' : ''}`}
+        onDragOver={(e) => { e.preventDefault(); setDrag(true) }} onDragLeave={() => setDrag(false)}
+        onDrop={(e) => { e.preventDefault(); setDrag(false); onFile(e.dataTransfer.files?.[0]) }}>
+        {d.photo ? (
+          <span className="dz-thumb"><StickerArt d={d} showCut /></span>
+        ) : (
+          <Upload size={28} strokeWidth={1.6} />
+        )}
+        <span className="dz-copy">
+          <b>{busy ? 'Making your cut line…' : d.photo ? 'Your sticker is ready' : 'Upload a PNG or JPEG'}</b>
+          <span>{d.photo ? 'Pink line = where it will be cut.' : 'Drag it here, or choose a file. A transparent PNG gives the cleanest cut.'}</span>
+        </span>
+        <button type="button" className="sbtn sbtn-light small-btn" onClick={() => fileRef.current?.click()} disabled={busy}>
+          {d.photo ? 'Replace' : 'Choose file'}
+        </button>
+        <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={(e) => { onFile(e.target.files?.[0]); e.target.value = '' }} />
+      </div>
+      {error && <p className="err">{error}</p>}
+      {info && !info.foundSubject && cut === 'shape' && (
+        <p className="note-warn">We couldn’t find a clear subject on a plain background, so the cut follows the photo’s edge. Try a PNG with a transparent background, or choose Circle.</p>
+      )}
+      <Field label="Cut line" hint={!img && d.photo ? 'Upload again to change the cut' : undefined}>
+        <Choice label="Cut line" value={cut} onChange={(c: CutShape) => { setCut(c); if (img) run(img, c, border, removeBg) }}
+          opts={[{ key: 'shape', label: 'Follow the shape' }, { key: 'circle', label: 'Circle' }, { key: 'square', label: 'Rounded square' }]} />
+      </Field>
+      <Field label="White border">
+        <Choice label="White border" value={border} onChange={(b: typeof border) => { setBorder(b); if (img) run(img, cut, b, removeBg) }}
+          opts={borderOpts.map((o) => ({ key: o.key, label: o.label }))} />
+      </Field>
+      {cut === 'shape' && !(info?.hasAlpha) && (
+        <label className="check-row">
+          <input type="checkbox" checked={removeBg} onChange={(e) => { setRemoveBg(e.target.checked); if (img) run(img, cut, border, e.target.checked) }} />
+          <span>Remove a plain background (for JPEG photos)</span>
+        </label>
+      )}
+      <p className="muted small">Your image stays in this browser to make the preview. Use artwork you own or have permission to print.</p>
+    </>
+  )
+}
+
 function SkinEditor({ d, set }: { d: StickerDesign; set: (d: StickerDesign) => void }) {
   return (
     <>
       <Field label="Style">
-        <Choice label="Style" value={d.style} onChange={(style) => set({ ...d, style })} opts={[{ key: 'art', label: 'Die-cut art' }, { key: 'clear', label: 'Clear sticker' }]} />
+        <Choice label="Style" value={d.style} onChange={(style) => set({ ...d, style })}
+          opts={[{ key: 'art', label: 'Die-cut art' }, { key: 'photo', label: 'Your image' }, { key: 'clear', label: 'Clear sticker' }]} />
       </Field>
-      {d.style === 'art' ? (
+      {d.style === 'photo' ? <PhotoUploader d={d} set={set} /> : d.style === 'art' ? (
         <>
           <Field label="Artwork" hint={`${artInfo[d.art].name} · ${sets.find((s) => s.key === artInfo[d.art].set)!.name}`}>
             <div className="art-picker">
@@ -355,8 +446,10 @@ function SkinEditor({ d, set }: { d: StickerDesign; set: (d: StickerDesign) => v
   )
 }
 
-function PackEditor({ pack, setPack, sel, setSel }: { pack: StickerDesign[]; setPack: (p: StickerDesign[]) => void; sel: number; setSel: (i: number) => void }) {
-  const [mode, setMode] = useState<'gallery' | 'custom'>('gallery')
+function PackEditor({ pack, setPack, sel, setSel, initialMode = 'gallery' }: {
+  pack: StickerDesign[]; setPack: (p: StickerDesign[]) => void; sel: number; setSel: (i: number) => void; initialMode?: 'gallery' | 'custom'
+}) {
+  const [mode, setMode] = useState<'gallery' | 'custom'>(initialMode)
   const [setFilter, setSetFilter] = useState<SetKey | 'all'>('all')
   const cur = pack[sel]
   const setCur = (d: StickerDesign) => setPack(pack.map((x, i) => (i === sel ? d : x)))
@@ -387,6 +480,7 @@ function PackEditor({ pack, setPack, sel, setSel }: { pack: StickerDesign[]; set
         <div className="picker-window">
           <SetChips value={setFilter} onChange={setSetFilter} />
           <GalleryGrid compact setFilter={setFilter} color={null}
+            onUpload={() => { setCur({ ...baseSticker, style: 'photo' }); setMode('custom') }}
             selectedId={gallery.find((g) => JSON.stringify(g.design) === JSON.stringify(cur))?.id}
             onPick={(id) => {
               setCur(byId(id)!.design)
@@ -400,7 +494,7 @@ function PackEditor({ pack, setPack, sel, setSel }: { pack: StickerDesign[]; set
           )}
         </div>
       ) : (
-        <div className="dcontrols"><SkinEditor d={cur} set={setCur} /></div>
+        <div className="dcontrols"><SkinEditor key={sel} d={cur} set={setCur} /></div>
       )}
     </>
   )
@@ -526,6 +620,7 @@ function Designer() {
     let pack = pid === 'kit' && !designId && !setKey ? basicPack(5) : signaturePack()
     if (setKey) { const skins = gallery.filter((g) => g.set === setKey).map((g) => g.design); if (skins.length) pack = pack.map((_, i) => skins[i % skins.length]) }
     if (designId && byId(designId)) pack = [byId(designId)!.design, ...pack.slice(1)]
+    if (params.get('upload') === '1') pack = [{ ...baseSticker, style: 'photo' as const }, ...pack.slice(1)]
     const hub: HubDesign = {
       ...defaultHub,
       shell: shell && /^[0-9A-Fa-f]{6}$/.test(shell) ? `#${shell.toUpperCase()}` : defaultHub.shell,
@@ -544,6 +639,8 @@ function Designer() {
   const [fabric, setFabric] = useState<FabricKey>(pid === 'kit' ? 'navy' : 'studio')
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
+  const [showCut, setShowCut] = useState(true)
+  const uploadMode = params.get('upload') === '1'
 
   useEffect(() => {
     setPack(fitPack(initial.pack, 5)); setPackN(5); setSel(0); setHub(initial.hub); setAdded(false)
@@ -577,7 +674,7 @@ function Designer() {
           <div className="designer-stage" style={fabricStyle(fabric)}>
             {hasTags && (
               <div className={`stage-tags ${showHubStage ? (focusTags ? 'focus' : 'dim') : 'solo'}`} onClick={() => showHubStage && setTab('tags')}>
-                <span className="big"><StickerArt d={pack[sel]} /></span>
+                <span className="big"><StickerArt d={pack[sel]} showCut={showCut} /></span>
                 {pack.filter((_, i) => i !== sel).slice(0, 4).map((d, i) => <span key={i} className={`mini m${i}`}><StickerArt d={d} showAntenna={false} /></span>)}
               </div>
             )}
@@ -593,6 +690,13 @@ function Designer() {
               ))}
             </div>
           </div>
+          {hasTags && pack[sel]?.style === 'photo' && pack[sel]?.photo && (
+            <div className="led-row">
+              <button type="button" className={showCut ? 'on' : ''} aria-pressed={showCut} onClick={() => setShowCut(!showCut)}>
+                <i style={{ background: '#E5487F' }} /> Show cut line
+              </button>
+            </div>
+          )}
           {showHubStage && (
             <div className="led-row" role="radiogroup" aria-label="Preview the light">
               <span className="muted small">Preview the light:</span>
@@ -632,7 +736,7 @@ function Designer() {
           )}
 
           <div className="dcontrols">
-            {tab === 'tags' && hasTags && <PackEditor pack={pack} setPack={setPack} sel={sel} setSel={setSel} />}
+            {tab === 'tags' && hasTags && <PackEditor key={uploadMode ? 'up' : 'pk'} pack={pack} setPack={setPack} sel={sel} setSel={setSel} initialMode={uploadMode ? 'custom' : 'gallery'} />}
             {tab === 'hub' && hasHub && <HubEditor hub={hub} set={setHub} />}
             {tab === 'case' && <CaseEditor value={hub.case} set={(c) => setHub({ ...hub, case: c })} allowNone={pid !== 'case'} />}
           </div>

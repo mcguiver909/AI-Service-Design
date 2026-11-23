@@ -63,13 +63,13 @@ export type ArtKey =
 export type SetKey = 'weather' | 'classic' | 'space' | 'garden' | 'charge' | 'music' | 'clear'
 
 export const sets: { key: SetKey; name: string; blurb: string; tint: string }[] = [
+  { key: 'clear', name: 'Clear set', blurb: 'See-through, with a printed border', tint: '#EEF1F5' },
   { key: 'weather', name: 'Weather set', blurb: 'For umbrellas and rainy-day things', tint: '#ECE8FD' },
   { key: 'classic', name: 'Classic set', blurb: 'Everyday icons for laptops', tint: '#FFF6D6' },
   { key: 'space', name: 'Space set', blurb: 'Planets for tablets', tint: '#FFE7DD' },
   { key: 'garden', name: 'Garden set', blurb: 'Flowers for pencil cases', tint: '#DFF6EA' },
   { key: 'charge', name: 'Charge set', blurb: 'For power banks and chargers', tint: '#E3EAFF' },
   { key: 'music', name: 'Music set', blurb: 'For headphones and earbuds', tint: '#FCE4EF' },
-  { key: 'clear', name: 'Clear set', blurb: 'See-through, with a printed border', tint: '#EEF1F5' },
 ]
 
 export const artInfo: Record<ArtKey, { name: string; set: SetKey }> = {
@@ -94,7 +94,12 @@ export type DotMark = 'logo' | 'heart' | 'star' | 'initials'
 
 /** A sticker skin: either die-cut art or a clear sticker with a printed border. */
 export interface StickerDesign {
-  style: 'art' | 'clear'
+  style: 'art' | 'clear' | 'photo'
+  /** Uploaded image, already die-cut with its white border (PNG data URL). */
+  photo?: string
+  /** The cut line for the uploaded image (PNG data URL, transparent except the line). */
+  cutline?: string
+  cut?: 'shape' | 'circle' | 'square'
   art: ArtKey
   color: string
   accent: string
@@ -140,6 +145,10 @@ export const defaultHub: HubDesign = { shell: '#F4F5F7', loop: 'silver', strap: 
 export interface GalleryDesign { id: string; name: string; set: SetKey; design: StickerDesign; isNew?: boolean }
 
 export const gallery: GalleryDesign[] = [
+  { id: 'clear-classic', name: 'Clear classic', set: 'clear', design: clear({}) },
+  { id: 'clear-confetti', name: 'Clear confetti', set: 'clear', design: clear({ frame: 'confetti', frameColor: '#F26A3D', dot: 'star', dotColor: '#F26A3D' }) },
+  { id: 'clear-dash', name: 'Clear dash', set: 'clear', design: clear({ shape: 'circle', frame: 'dashed', frameColor: '#FFFFFF', dot: 'initials', dotColor: '#12161C', initials: 'HJ' }) },
+  { id: 'clear-stripes', name: 'Clear stripes', set: 'clear', design: clear({ frame: 'stripes', frameColor: '#2DBE6C', dot: 'heart', dotColor: '#2DBE6C' }) },
   { id: 'drizzle-lilac', name: 'Drizzle', set: 'weather', design: art('drizzle', '#B9A7F5', '#3158FF') },
   { id: 'drizzle-sky', name: 'Drizzle · Sky', set: 'weather', design: art('drizzle', '#9CC7F7', '#7357E0') },
   { id: 'sunny', name: 'Sunny', set: 'weather', design: art('sun', '#F5C518', '#F26A3D') },
@@ -160,10 +169,6 @@ export const gallery: GalleryDesign[] = [
   { id: 'bolt-sun', name: 'Bolt · Volt', set: 'charge', design: art('bolt', '#F5C518', '#12161C') },
   { id: 'note', name: 'Note', set: 'music', design: art('note', '#7357E0', '#F7A8C8') },
   { id: 'note-lagoon', name: 'Note · Lagoon', set: 'music', design: art('note', '#1FB5D6', '#12161C'), isNew: true },
-  { id: 'clear-classic', name: 'Clear classic', set: 'clear', design: clear({}) },
-  { id: 'clear-confetti', name: 'Clear confetti', set: 'clear', design: clear({ frame: 'confetti', frameColor: '#F26A3D', dot: 'star', dotColor: '#F26A3D' }) },
-  { id: 'clear-dash', name: 'Clear dash', set: 'clear', design: clear({ shape: 'circle', frame: 'dashed', frameColor: '#FFFFFF', dot: 'initials', dotColor: '#12161C', initials: 'HJ' }) },
-  { id: 'clear-stripes', name: 'Clear stripes', set: 'clear', design: clear({ frame: 'stripes', frameColor: '#2DBE6C', dot: 'heart', dotColor: '#2DBE6C' }) },
 ]
 
 /** The five signature skins from the concept sheet. */
@@ -172,6 +177,7 @@ export function byId(id: string) { return gallery.find((g) => g.id === id) }
 export const signaturePack = () => signatureIds.map((id) => byId(id)!.design)
 
 export function designLabel(d: StickerDesign) {
+  if (d.style === 'photo') return `Your image · ${d.cut === 'circle' ? 'circle cut' : d.cut === 'square' ? 'square cut' : 'die-cut to shape'}`
   if (d.style === 'clear') return `Clear · ${d.frame === 'none' ? 'no border' : d.frame}`
   return `${artInfo[d.art].name} · ${colorName(d.color, stickerColors)}`
 }
