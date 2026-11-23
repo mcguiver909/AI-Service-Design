@@ -1,8 +1,11 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { StoreProvider, useStore } from './store'
+import { SyncManager } from './sync'
 import { Toasts } from './components/ui'
-import { ConnectStep, FirstItemStep, PairStep, PermissionsStep, Welcome } from './screens/Onboarding'
+import { Login } from './screens/Login'
+import { ConnectStep, FirstItemStep, PairStep, PermissionsStep } from './screens/Onboarding'
+import { TimetableSettings, TimetableStep } from './screens/Timetable'
 import { EditPackingList, Today } from './screens/Today'
 import { AddItem, EditItem, ItemDetail, Items } from './screens/Items'
 import { Directions, Find, Ring } from './screens/Find'
@@ -11,15 +14,32 @@ import {
   NotificationSettings, PlacesSettings, PrivacySettings, Settings,
 } from './screens/Settings'
 
+/** Signed in (or demo) and set up. */
 function RequireSetup({ children }: { children: ReactNode }) {
   const { state } = useStore()
-  return state.onboarded ? <>{children}</> : <Navigate to="/welcome" replace />
+  if (!state.user) return <Navigate to="/login" replace />
+  if (!state.onboarded) return <Navigate to="/setup/permissions" replace />
+  return <>{children}</>
+}
+
+/** Signed in, still in setup. */
+function RequireUser({ children }: { children: ReactNode }) {
+  const { state } = useStore()
+  return state.user ? <>{children}</> : <Navigate to="/login" replace />
 }
 
 function Home() {
   const { state } = useStore()
-  return <Navigate to={state.onboarded ? '/today' : '/welcome'} replace />
+  return <Navigate to={!state.user ? '/login' : state.onboarded ? '/today' : '/setup/permissions'} replace />
 }
+
+const setup: [string, ReactNode][] = [
+  ['/setup/permissions', <PermissionsStep />],
+  ['/setup/pair', <PairStep />],
+  ['/setup/timetable', <TimetableStep />],
+  ['/setup/item', <FirstItemStep />],
+  ['/setup/connect', <ConnectStep />],
+]
 
 const guarded: [string, ReactNode][] = [
   ['/today', <Today />],
@@ -33,6 +53,7 @@ const guarded: [string, ReactNode][] = [
   ['/find/:id/ring', <Ring />],
   ['/find/:id/directions', <Directions />],
   ['/settings', <Settings />],
+  ['/settings/timetable', <TimetableSettings />],
   ['/settings/keyring', <KeyringSettings />],
   ['/settings/connections', <ConnectionsSettings />],
   ['/settings/notifications', <NotificationSettings />],
@@ -47,18 +68,15 @@ export default function App() {
   return (
     <StoreProvider>
       <BrowserRouter>
+        <SyncManager />
         <div className="device">
           <div className="device-inner">
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/welcome" element={<Welcome />} />
-              <Route path="/setup/permissions" element={<PermissionsStep />} />
-              <Route path="/setup/pair" element={<PairStep />} />
-              <Route path="/setup/item" element={<FirstItemStep />} />
-              <Route path="/setup/connect" element={<ConnectStep />} />
-              {guarded.map(([path, el]) => (
-                <Route key={path} path={path} element={<RequireSetup>{el}</RequireSetup>} />
-              ))}
+              <Route path="/login" element={<Login />} />
+              <Route path="/welcome" element={<Navigate to="/login" replace />} />
+              {setup.map(([path, el]) => <Route key={path} path={path} element={<RequireUser>{el}</RequireUser>} />)}
+              {guarded.map(([path, el]) => <Route key={path} path={path} element={<RequireSetup>{el}</RequireSetup>} />)}
               <Route path="*" element={<Home />} />
             </Routes>
             <Toasts />

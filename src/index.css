@@ -59,6 +59,7 @@ h1, h2, h3, p { margin: 0; }
   display: flex; flex-direction: column; gap: 12px;
 }
 .screen.with-tabs .app-scroll { padding-bottom: 24px; }
+.app-scroll > * { flex-shrink: 0; }
 
 /* Tab bar ------------------------------------------------------------- */
 .tabbar {
@@ -394,8 +395,6 @@ h1 { font-size: 30px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.
 .segments span { flex: 1; height: 7px; border-radius: 4px; }
 .segments .ok { background: var(--green-bright); }
 .segments .miss { background: #e5483f; }
-.weather-card { flex-direction: row; align-items: center; gap: 12px; }
-.weather-card .row-title { font-size: 17px; }
 .w-ico { width: 40px; height: 40px; border-radius: 12px; background: rgba(255, 255, 255, 0.18); display: grid; place-items: center; flex-shrink: 0; }
 .appointments { gap: 7px; }
 .appointments h3 { font-size: 15px; }
@@ -499,3 +498,89 @@ h1 { font-size: 30px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ---- v2: login, timetable, live weather, schedule ---------------- */
+.login .hero { height: 210px; }
+.feature-list.compact { gap: 12px; }
+.f-ico.sun { background: #fff4d6; color: #a86b00; }
+.google-btn { background: #fff; color: var(--ink); box-shadow: inset 0 0 0 1.5px #d6dbe3; gap: 10px; }
+.google-btn .g-mark {
+  width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 13px;
+  color: #fff; background: var(--blue);
+}
+.fine-print { display: flex; gap: 6px; align-items: flex-start; font-size: 12px; color: var(--muted); line-height: 1.4; }
+.fine-print svg { flex-shrink: 0; margin-top: 2px; }
+.ghost-link { font-size: 13px; color: var(--muted); font-weight: 600; padding: 6px; align-self: center; text-decoration: underline; text-underline-offset: 3px; }
+.text-link.inline { padding: 0; display: inline; }
+.text-link svg { vertical-align: -2px; }
+
+/* Timetable */
+.week { background: #fff; border-radius: var(--r-card); padding: 10px 8px 8px 4px; box-shadow: var(--shadow); flex-shrink: 0; }
+.week-head, .week-body { display: grid; gap: 3px; }
+.week-head span { text-align: center; font-size: 11.5px; font-weight: 600; color: var(--muted); padding-bottom: 6px; }
+.week-head span.today { color: var(--blue); }
+.week-body { position: relative; }
+.week-hours { position: relative; }
+.week-hours span { position: absolute; right: 4px; font-size: 10px; color: var(--faint); transform: translateY(-50%); }
+.week-hours span:first-child { transform: none; }
+.week-col { position: relative; border-radius: 8px; background: #f8f9fb; }
+.week-col.today { background: #eef2ff; }
+.week-col i { position: absolute; left: 0; right: 0; height: 1px; background: #eceff3; }
+.week-block {
+  position: absolute; left: 2px; right: 2px; border-radius: 7px; border-left: 3px solid; padding: 3px 4px;
+  text-align: left; overflow: hidden; display: flex; flex-direction: column; gap: 1px;
+}
+.week-block b { font-size: 10.5px; line-height: 1.15; font-weight: 650; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.week-block small { font-size: 9.5px; opacity: 0.8; }
+.course-row { min-height: 60px; }
+.course-dot { width: 10px; height: 36px; border-radius: 5px; flex-shrink: 0; }
+.row-sub svg { vertical-align: -1px; }
+.empty-timetable {
+  display: flex; flex-direction: column; gap: 4px; padding: 18px; border-radius: var(--r-card);
+  border: 1.5px dashed #c5ccd8; text-align: center; color: var(--muted); font-size: 13.5px;
+}
+.empty-timetable b { color: var(--ink); font-size: 15px; }
+.day-pills { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.day-pills button {
+  height: 42px; border-radius: 12px; background: #fff; font-weight: 600; font-size: 13.5px; box-shadow: inset 0 0 0 1.5px #dde1e8;
+}
+.day-pills button.on { background: var(--blue); color: #fff; box-shadow: none; }
+.time-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.time-input.big { padding: 12px; font-size: 16px; border-radius: 14px; width: 100%; }
+.chip .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+/* Weather card */
+.weather-card { gap: 12px; padding: 16px; }
+.weather-card.loading { opacity: 0.85; }
+.wx-now { display: flex; align-items: center; gap: 12px; }
+.wx-ico { width: 50px; height: 50px; border-radius: 14px; background: rgba(255, 255, 255, 0.16); display: grid; place-items: center; flex-shrink: 0; }
+.wx-temp { font-size: 40px; font-weight: 650; letter-spacing: -0.03em; line-height: 1; }
+.wx-meta { display: flex; flex-direction: column; gap: 1px; font-size: 13px; margin-left: 2px; }
+.wx-meta b { font-size: 15px; }
+.wx-meta small { opacity: 0.8; font-size: 11.5px; display: inline-flex; align-items: center; gap: 3px; }
+.wx-hours {
+  display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; padding: 10px 2px 2px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+.wx-hour { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; }
+.wx-hour small { font-size: 10.5px; opacity: 0.85; white-space: nowrap; }
+.wx-hour b { font-weight: 600; }
+.wx-hour em { font-style: normal; font-size: 10.5px; min-height: 13px; opacity: 0.75; }
+.wx-hour em.wet { opacity: 1; font-weight: 700; color: #cfe0ff; }
+.wx-rule {
+  display: flex; align-items: flex-start; gap: 8px; background: rgba(255, 255, 255, 0.14); border-radius: 12px;
+  padding: 9px 11px; font-size: 13px; line-height: 1.4;
+}
+.wx-rule svg { flex-shrink: 0; margin-top: 1px; }
+
+/* Schedule */
+.appt-head { display: flex; justify-content: space-between; align-items: center; }
+.appt-head .text-link { display: inline-flex; align-items: center; gap: 4px; }
+.appointments .appt { display: grid; grid-template-columns: 4px 52px 1fr; gap: 8px; align-items: baseline; font-size: 13.5px; color: var(--muted); }
+.appointments .appt i { width: 4px; height: 14px; border-radius: 2px; align-self: center; }
+.badge.as-btn { cursor: pointer; }
+.acct { display: flex; align-items: center; gap: 12px; }
+.acct img, .avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.acct span { display: flex; flex-direction: column; gap: 1px; }
+.acct small { color: var(--muted); font-size: 12.5px; font-weight: 400; }
+.mini-label { margin-top: 2px; }

@@ -119,7 +119,14 @@ export function Row({ leading, title, sub, trailing, onClick, to, chevron, class
     </>
   )
   if (to) return <Link to={to} className={`row pressable ${className}`}>{inner}</Link>
-  if (onClick) return <button type="button" className={`row pressable ${className}`} onClick={onClick}>{inner}</button>
+  if (onClick) {
+    return (
+      <div role="button" tabIndex={0} className={`row pressable ${className}`} onClick={onClick}
+        onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); onClick() } }}>
+        {inner}
+      </div>
+    )
+  }
   return <div className={`row ${className}`}>{inner}</div>
 }
 

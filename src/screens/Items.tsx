@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { BatteryMedium, Plus } from 'lucide-react'
-import { locationLine, newId, randomStickerId, useStore } from '../store'
+import { emptyRule, locationLine, newId, randomStickerId, useStore } from '../store'
 import type { ItemStatus } from '../store'
 import { ItemTile } from '../components/icons'
 import { draftFromItem, ItemForm, StickerCard, useStickerScan } from '../components/ItemForm'
@@ -195,7 +195,7 @@ export function AddItem() {
       <PageHead back="/items" backLabel="Items" title="Add an item" sub="Peel a clear sticker, press it onto the item, then hold your phone near it." />
       <StickerCard stickerId={stickerId} detected={detected} />
       <ItemForm detected={detected} submitLabel="Save item"
-        initial={{ name: '', icon: 'bottle', color: 'sky', stickerId, rule: { always: true, events: false, keywords: [], weather: false, weatherKinds: [] } }}
+        initial={{ name: '', icon: 'bottle', color: 'sky', stickerId, rule: { ...emptyRule, always: true } }}
         onSubmit={(d) => {
           const id = newId(d.name)
           dispatch({ type: 'upsertItem', item: { id, name: d.name, icon: d.icon, color: d.color, rule: d.rule, stickerId, battery: 100, status: 'withYou' } })

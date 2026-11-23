@@ -1,33 +1,53 @@
 # Tagly · Never leave without it
 
 Tagly checks your bag every morning and tells you what's missing before you walk out the door.
-This is a mobile web app prototype built from the Tagly Figma prototype (flows) and UI spec (visual design).
+Mobile web app built from the Tagly Figma prototype (flows) and UI spec (visual design).
 
 ## What works
 
-- **Onboarding** (5 steps): permissions (real browser prompts for notifications and location), keyring pairing, first sticker + item, calendar and weather.
-- **Today**: packing list built from each item's rules (always / event keywords / weather) + today's calendar and forecast, progress bar, keyring state, suggestions, "Pack your way" for today-only changes.
-- **Items**: filters by status, item details with live rule editing, add / edit / re-pair / remove.
-- **Find**: illustrated map, ring an item, "I found it" → back in your bag, directions (opens Google Maps), mark as lost, mesh network search.
-- **Settings**: keyring light/vibration, calendar and weather, morning check and quiet hours, alert types, safe places, permissions, delete data, FAQ, feedback, notification preview (in-app push banners).
-- Data is saved in the browser (localStorage). "Explore the demo" on the welcome screen loads sample data.
+- **Sign in with Google** (one tap = sign-up). Each Google account gets its own items, timetable and settings.
+  "Explore the demo" loads sample data; "Continue without Google" keeps everything on this device.
+- **Your timetable**: add classes (name, days, start/end, room). Items can be linked to classes.
+- **Google Calendar (read-only)**: today's events from the calendars you pick, merged with your timetable.
+- **Live weather** (Open-Meteo, no key): current temperature, next 8 hours, rain chance. Rain/cold/sun rules add items automatically.
+- **Today**: packing list = item rules (always / classes / event keywords / weather) × today's schedule × forecast. Tap **Pack** to check items off (or let the keyring do it).
+- **Items, Find, Settings**: item details and rules, ring / directions / lost mode, keyring feedback, quiet hours, places, privacy.
 
-Hardware (stickers, keyring, Bluetooth), Google Calendar and weather are simulated with sample data.
+Stickers, keyring and Bluetooth are simulated.
 
 ## Run locally
 
 ```bash
 npm install
-npm run dev      # http://localhost:5173
-npm run build    # production build in dist/
+cp .env.example .env.local      # put your Google client ID in it
+npm run dev                     # http://localhost:5173
 ```
 
-## Deploy to Vercel
+## Google sign-in setup (once, ~10 min)
 
-Import this repository at <https://vercel.com/new>. Vercel detects Vite automatically
-(build `npm run build`, output `dist`). `vercel.json` rewrites routes to `index.html`
-so deep links like `/items/pencil` work on refresh.
+1. Open <https://console.cloud.google.com> and create a project (e.g. `Tagly`).
+2. **APIs & Services → Library** → enable **Google Calendar API**.
+3. **Google Auth Platform → Branding / Get started**: app name `Tagly`, your email, audience **External**.
+4. **Google Auth Platform → Audience → Test users**: add the Gmail address of every teammate/tester.
+   (While the app is in *Testing*, only these accounts can sign in. Google shows an "unverified app" notice; click Continue.)
+5. **Google Auth Platform → Data access → Add scopes**: `.../auth/calendar.readonly` (plus `openid`, `email`, `profile`).
+6. **Google Auth Platform → Clients → Create client → Web application**
+   - Authorized JavaScript origins: `https://<your-project>.vercel.app` and `http://localhost:5173`
+   - No redirect URI is needed. Copy the **Client ID**.
+7. **Vercel → Project → Settings → Environment Variables**: `VITE_GOOGLE_CLIENT_ID` = the client ID → **Redeploy**.
+
+Changes in Google Cloud can take a few minutes to apply. An `origin_mismatch` error means the site's address
+isn't in the authorized JavaScript origins.
+
+## Privacy
+
+Calendar access is read-only and happens directly between the browser and Google; there is no Tagly server.
+The access token is kept for the browser session only. App data is stored in the browser (localStorage) per account.
+
+## Deploy
+
+Push to GitHub → Vercel builds automatically (`npm run build`, output `dist`). `vercel.json` makes deep links work.
 
 ## Stack
 
-React 19 · TypeScript · Vite · React Router · lucide-react icons · Inter
+React 19 · TypeScript · Vite · React Router · Google Identity Services · Google Calendar API · Open-Meteo · lucide-react · Inter

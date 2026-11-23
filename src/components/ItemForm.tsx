@@ -36,6 +36,21 @@ export function useStickerScan(delay = 1300) {
   return detected
 }
 
+const nameHints: [RegExp, IconKey][] = [
+  [/laptop|macbook|notebook|gram|노트북/i, 'laptop'],
+  [/ipad|tablet|galaxy tab|태블릿|아이패드/i, 'tablet'],
+  [/pencil|pen|필통/i, 'pencil'],
+  [/umbrella|우산/i, 'umbrella'],
+  [/earbud|airpod|buds|이어폰|에어팟/i, 'earbuds'],
+  [/key|열쇠|키/i, 'key'],
+  [/bottle|tumbler|water|텀블러|물병/i, 'bottle'],
+  [/wallet|card|지갑|카드/i, 'wallet'],
+  [/glass|안경/i, 'glasses'],
+  [/book|textbook|책|교재/i, 'book'],
+  [/headphone|헤드폰/i, 'headphones'],
+  [/camera|카메라/i, 'camera'],
+]
+
 export function ItemForm({ initial, submitLabel, onSubmit, showRule = true, detected = true }: {
   initial: ItemDraft
   submitLabel: string
@@ -45,6 +60,7 @@ export function ItemForm({ initial, submitLabel, onSubmit, showRule = true, dete
 }) {
   const [d, setD] = useState<ItemDraft>(initial)
   const [touched, setTouched] = useState(false)
+  const [iconTouched, setIconTouched] = useState(false)
   const nameOk = d.name.trim().length > 0
 
   return (
@@ -52,7 +68,11 @@ export function ItemForm({ initial, submitLabel, onSubmit, showRule = true, dete
       <label className="field">
         <span className="field-label">Name</span>
         <input value={d.name} maxLength={28} placeholder="e.g. Water bottle"
-          onChange={(e) => setD({ ...d, name: e.target.value })} aria-invalid={touched && !nameOk} />
+          onChange={(e) => {
+            const name = e.target.value
+            const hint = nameHints.find(([re]) => re.test(name))
+            setD({ ...d, name, icon: hint && !iconTouched ? hint[1] : d.icon })
+          }} aria-invalid={touched && !nameOk} />
         {touched && !nameOk && <span className="field-error">Give your item a name.</span>}
       </label>
 
@@ -66,7 +86,7 @@ export function ItemForm({ initial, submitLabel, onSubmit, showRule = true, dete
               <button key={k} type="button" aria-label={iconNames[k]} aria-pressed={on}
                 className={`icon-opt ${on ? 'on' : ''}`}
                 style={on ? { background: colors[d.color].bg, color: colors[d.color].fg } : undefined}
-                onClick={() => setD({ ...d, icon: k, name: d.name || iconNames[k] })}>
+                onClick={() => { setIconTouched(true); setD({ ...d, icon: k, name: d.name || iconNames[k] }) }}>
                 <Icon size={22} strokeWidth={1.8} />
               </button>
             )

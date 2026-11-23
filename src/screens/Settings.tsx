@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ChevronDown, House, MapPin, Plus } from 'lucide-react'
-import { initialState, useStore } from '../store'
+import { ChevronDown, House, LogOut, MapPin, Plus } from 'lucide-react'
+import { useStore } from '../store'
 import type { AlertTypes, Feedback } from '../store'
 import { LogoMark } from '../components/icons'
 import {
@@ -9,6 +9,8 @@ import {
 } from '../components/ui'
 import { KeyringRepairSheet } from './Items'
 import { ConnectionsPanel, PermissionList } from './Onboarding'
+import { CalendarScopeError, fetchProfile, googleConfigured, requestAccess, signOutGoogle } from '../google'
+import { pullCalendar } from '../sync'
 
 const feedbackLabel: Record<Feedback, string> = {
   'light+vibrate': 'Light + vibrate',
@@ -27,10 +29,19 @@ export function Settings() {
   const { state } = useStore()
   const [repair, setRepair] = useState(false)
   const alertsOn = Object.values(state.alerts).filter(Boolean).length
-  const calCount = Object.values(state.calendars).filter(Boolean).length
+  const calCount = state.calendars.filter((c) => c.selected).length
   return (
     <Screen tabs>
       <PageHead title="Settings" />
+
+      <Group label="Account">
+        <GroupRow to="/settings/account" title={
+          <span className="acct">
+            {state.user?.picture ? <img src={state.user.picture} alt="" referrerPolicy="no-referrer" /> : <LogoMark size={36} />}
+            <span><b>{state.user?.name ?? 'Guest'}</b><small>{state.user?.demo ? 'Demo profile' : state.user?.email === 'local' ? 'This device only' : state.user?.email}</small></span>
+          </span>
+        } />
+      </Group>
 
       <Group label="Keyring">
         <GroupRow title="Status" value={state.keyring.paired
@@ -40,7 +51,8 @@ export function Settings() {
         <GroupRow title="Re-pair keyring" tone="link" onClick={() => setRepair(true)} />
       </Group>
 
-      <Group label="Calendar and weather">
+      <Group label="Timetable, calendar and weather">
+        <GroupRow title="Timetable" value={state.timetable.length ? `${state.timetable.length} class${state.timetable.length === 1 ? '' : 'es'}` : 'Add classes'} to="/settings/timetable" />
         <GroupRow title="Google Calendar" value={state.googleConnected ? `${calCount} calendar${calCount === 1 ? '' : 's'}` : 'Off'} to="/settings/connections" />
         <GroupRow title="Weather forecast" value={state.weatherOn ? 'On' : 'Off'} to="/settings/connections" />
       </Group>
@@ -64,10 +76,9 @@ export function Settings() {
         <GroupRow title="Delete my data" tone="danger" to="/settings/privacy?delete=1" />
       </Group>
 
-      <Group label="Help and account">
+      <Group label="Help">
         <GroupRow title="FAQ" to="/settings/help" />
         <GroupRow title="Send feedback" to="/settings/help?feedback=1" />
-        <GroupRow title="Account" to="/settings/account" />
       </Group>
 
       <p className="version">Tagly 1.0 · prototype build</p>
@@ -267,7 +278,7 @@ export function PlacesSettings() {
 /* Privacy --------------------------------------------------------------- */
 
 export function PrivacySettings() {
-  const { dispatch, toast } = useStore()
+  const { deleteAccountData, toast } = useStore()
   const nav = useNavigate()
   const [params] = useSearchParams()
   const [confirm, setConfirm] = useState(params.get('delete') === '1')
@@ -280,12 +291,13 @@ export function PrivacySettings() {
       <Sheet open={confirm} onClose={() => setConfirm(false)} title="Delete data">
         <p className="eyebrow">Privacy</p>
         <h2 className="sheet-title">Delete your data?</h2>
-        <p className="lead">This removes your items, rules, places and location history from this device and restarts setup. It can’t be undone.</p>
+        <p className="lead">This removes your items, timetable, rules, places and history from this device and signs you out. It can’t be undone. Your Google Calendar itself is never changed.</p>
         <Button onClick={() => setConfirm(false)}>Cancel</Button>
         <Button variant="danger" onClick={() => {
-          dispatch({ type: 'reset', state: initialState })
+          signOutGoogle()
+          deleteAccountData()
           toast({ title: 'Your data was deleted' })
-          nav('/welcome')
+          nav('/login')
         }}>Delete everything</Button>
       </Sheet>
     </Screen>
@@ -345,20 +357,49 @@ export function HelpSettings() {
 /* Account ------------------------------------------------------------- */
 
 export function AccountSettings() {
-  const { dispatch } = useStore()
+  const { state, signIn, signOut, set, toast } = useStore()
   const nav = useNavigate()
+  const [busy, setBusy] = useState(false)
+  const u = state.user
+  const google = !!u && !u.demo && u.email !== 'local'
+
+  const connectGoogle = async () => {
+    setBusy(true)
+    try {
+      let calOk = true
+      try { await requestAccess({ prompt: 'select_account' }) } catch (e) { if (e instanceof CalendarScopeError) calOk = false; else throw e }
+      const p = await fetchProfile()
+      // Bring this device's data into the Google account if that account is new.
+      const { user: _u, ...carry } = state
+      void _u
+      const s = signIn({ email: p.email, name: p.name, picture: p.picture }, u?.demo ? undefined : carry)
+      if (calOk) set(await pullCalendar(s)); else set({ googleConnected: false })
+      toast({ title: `Signed in as ${p.email}`, tone: 'success' })
+      nav(s.onboarded ? '/today' : '/setup/permissions')
+    } catch (e) {
+      toast({ title: 'Sign-in failed', body: (e as Error).message, tone: 'danger' })
+    } finally { setBusy(false) }
+  }
+
   return (
     <Screen tabs>
       <PageHead back="/settings" backLabel="Settings" title="Your account" />
       <Card className="keyring-row">
-        <LogoMark size={44} />
+        {u?.picture ? <img className="avatar" src={u.picture} alt="" referrerPolicy="no-referrer" /> : <LogoMark size={44} />}
         <span className="row-copy">
-          <span className="row-title">Tagly explorer</span>
-          <span className="row-sub">Local prototype · no sign-in required</span>
+          <span className="row-title">{u?.name ?? 'Guest'}</span>
+          <span className="row-sub">{u?.demo ? 'Demo profile · sample data' : google ? `Google account · ${u?.email}` : 'This device only · no sign-in'}</span>
         </span>
       </Card>
-      <p className="hint">Your items and settings are stored only in this browser.</p>
-      <Button onClick={() => { dispatch({ type: 'reset', state: initialState }); nav('/welcome') }}>Restart onboarding</Button>
+      {google ? (
+        <p className="hint">Your items, timetable and settings are saved for this account in this browser. Calendar access is read-only.</p>
+      ) : (
+        <>
+          <p className="hint">{u?.demo ? 'Sign in to start your own Tagly with your timetable and calendar.' : 'Sign in with Google to use your calendar. What you set up here comes with you.'}</p>
+          <Button disabled={!googleConfigured || busy} onClick={connectGoogle}>{busy ? 'Signing in…' : 'Continue with Google'}</Button>
+        </>
+      )}
+      <Button variant="light" onClick={() => { signOutGoogle(); signOut(); nav('/login') }}><LogOut size={17} /> {u?.demo ? 'Leave demo' : 'Sign out'}</Button>
     </Screen>
   )
 }
