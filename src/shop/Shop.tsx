@@ -1,165 +1,34 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, NavLink, Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { ArrowRight, Check, ChevronLeft, Minus, Package, Plus, RotateCcw, ShoppingBag, Smartphone, Trash2, Truck } from 'lucide-react'
 import {
-  ENGRAVING_FEE, FREE_SHIPPING_FROM, SHIPPING_EXPRESS, ShopProvider, bodyColors, defaultKeyring, defaultSticker, inkColors,
-  kitPacks, packSizes, products, shippingFor, unitPrice, useShop, won,
+  ArrowRight, Check, ChevronLeft, ChevronRight, Minus, Package, Plus, RotateCcw, ShoppingBag, Smartphone, Trash2, Truck,
+} from 'lucide-react'
+import {
+  ENGRAVING_FEE, FREE_SHIPPING_FROM, PATTERN_FEE, SHIPPING_EXPRESS, STRAP_FEE, ShopProvider, art, artInfo, artOrder, byId, caseColors, caseInfo, casePrice, cases, finishes, patterns,
+  colorName, defaultHub, designLabel, fitPack, gallery, kitPacks, packSizes, products, sets, shellColors, shippingFor, signaturePack,
+  stickerColors, strapColors, unitPrice, useShop, won,
 } from './shopStore'
-import type { CartLine, DotMark, FrameStyle, KeyringDesign, ProductId, StickerDesign } from './shopStore'
-import { KeyringArt, StickerArt, fabricStyle, fabrics } from './Previews'
-import type { FabricKey } from './Previews'
+import type {
+  CartLine, CaseChoice, CaseKey, CasePattern, DotMark, Finish, FrameStyle, HubDesign, ProductId, SetKey, StickerDesign, Swatch,
+} from './shopStore'
+import { CaseArt, HubArt, StickerArt, fabricStyle, fabrics } from './Previews'
+import type { FabricKey, LedState } from './Previews'
 import { LogoMark } from '../components/icons'
 import './shop.css'
 
-/* Presets shown on the home page ------------------------------------------- */
+/* Shared bits ---------------------------------------------------------------------- */
 
-const presets: { name: string; sticker: StickerDesign; keyring: KeyringDesign }[] = [
-  { name: 'Classic clear', sticker: defaultSticker, keyring: defaultKeyring },
-  { name: 'Coral confetti', sticker: { shape: 'square', frame: 'confetti', frameColor: '#F26A3D', dot: 'star', dotColor: '#F26A3D', initials: '' }, keyring: { body: '#F6C6B8', ring: 'gold', engraving: '', font: 'sans' } },
-  { name: 'Midnight dash', sticker: { shape: 'circle', frame: 'dashed', frameColor: '#FFFFFF', dot: 'initials', dotColor: '#12161C', initials: 'HJ' }, keyring: { body: '#12161C', ring: 'black', engraving: 'HYEJIN', font: 'mono' } },
-  { name: 'Sage stripes', sticker: { shape: 'square', frame: 'stripes', frameColor: '#22A06B', dot: 'heart', dotColor: '#22A06B', initials: '' }, keyring: { body: '#BFD8C9', ring: 'silver', engraving: '', font: 'serif' } },
-]
-
-/* Layout --------------------------------------------------------------------- */
-
-function ShopLayout({ children }: { children: ReactNode }) {
-  const { count } = useShop()
-  useEffect(() => { document.title = 'Tagly Shop · Design your own' }, [])
-  return (
-    <div className="shop">
-      <header className="shop-header">
-        <div className="shop-wrap shop-header-inner">
-          <Link to="/shop" className="shop-logo"><LogoMark size={30} /> <b>Tagly</b><span>shop</span></Link>
-          <nav className="shop-nav">
-            <NavLink to="/shop/design/kit">Starter kit</NavLink>
-            <NavLink to="/shop/design/stickers">Stickers</NavLink>
-            <NavLink to="/shop/design/keyring">Keyring</NavLink>
-          </nav>
-          <div className="shop-header-actions">
-            <Link to="/" className="shop-applink"><Smartphone size={16} /> Open app</Link>
-            <Link to="/shop/cart" className="shop-cart" aria-label={`Cart, ${count} items`}>
-              <ShoppingBag size={20} />
-              {count > 0 && <span className="shop-cart-count">{count}</span>}
-            </Link>
-          </div>
-        </div>
-      </header>
-      <main>{children}</main>
-      <footer className="shop-footer">
-        <div className="shop-wrap">
-          <p><b>Tagly</b> · Never leave without it.</p>
-          <p className="muted">Concept store for a student design project. Prices are proposals; orders are demonstrations and no payment is taken.</p>
-        </div>
-      </footer>
-    </div>
-  )
+function HubOrCase({ hub, led = 'green' }: { hub: HubDesign; led?: LedState }) {
+  return hub.case ? <CaseArt c={hub.case} shell={hub.shell} led={led} /> : <HubArt d={hub} led={led} />
 }
 
-/* Home -------------------------------------------------------------------------- */
-
-function ShopHome() {
-  const [fabric, setFabric] = useState<FabricKey>('navy')
-  return (
-    <>
-      <section className="shop-hero">
-        <div className="shop-wrap hero-grid">
-          <div className="hero-copy">
-            <p className="kicker">Clear stickers · smart keyring</p>
-            <h1>Make it yours.<br />Never leave it behind.</h1>
-            <p className="lede">Design see-through tracking stickers and a keyring that match your bag. Tagly checks what’s inside every morning and tells you what’s missing.</p>
-            <div className="hero-cta">
-              <Link to="/shop/design/kit" className="sbtn sbtn-dark">Design your kit <ArrowRight size={18} /></Link>
-              <Link to="/shop/design/stickers" className="sbtn sbtn-light">Just stickers</Link>
-            </div>
-            <ul className="hero-points">
-              <li><Check size={16} /> Battery-free stickers, recharge from Wi-Fi</li>
-              <li><Check size={16} /> Free shipping from {won(FREE_SHIPPING_FROM)}</li>
-              <li><Check size={16} /> Works with the Tagly app, no subscription</li>
-            </ul>
-          </div>
-          <div className="hero-stage" style={fabricStyle(fabric)}>
-            <div className="sh-sticker s1"><StickerArt d={presets[1].sticker} /></div>
-            <div className="sh-sticker s2"><StickerArt d={presets[2].sticker} /></div>
-            <div className="sh-sticker s3"><StickerArt d={defaultSticker} /></div>
-            <div className="sh-keyring"><KeyringArt d={presets[0].keyring} /></div>
-            <div className="fabric-picker" role="group" aria-label="Bag fabric">
-              {fabrics.map((f) => (
-                <button key={f.key} type="button" aria-label={f.name} aria-pressed={fabric === f.key}
-                  className={fabric === f.key ? 'on' : ''} style={{ background: f.a }} onClick={() => setFabric(f.key)} />
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="shop-wrap shop-section">
-        <h2>Pick a starting point</h2>
-        <p className="muted">Every product is fully customisable. Start from scratch or from a ready-made look.</p>
-        <div className="product-grid">
-          {(['kit', 'stickers', 'keyring'] as ProductId[]).map((id) => {
-            const p = products[id]
-            return (
-              <Link key={id} to={`/shop/design/${id}`} className="product-card">
-                <div className="product-media" style={fabricStyle(id === 'keyring' ? 'sand' : id === 'kit' ? 'navy' : 'olive')}>
-                  {id !== 'keyring' && <div className="pm-sticker"><StickerArt d={id === 'kit' ? defaultSticker : presets[3].sticker} /></div>}
-                  {id !== 'stickers' && <div className="pm-keyring"><KeyringArt d={id === 'kit' ? defaultKeyring : presets[2].keyring} /></div>}
-                </div>
-                <div className="product-info">
-                  <h3>{p.name}</h3>
-                  <p className="muted">{p.tagline}</p>
-                  <p className="price">{id === 'stickers' ? `from ${won(packSizes[0].price)}` : won(p.basePrice)}</p>
-                </div>
-              </Link>
-            )
-          })}
-        </div>
-      </section>
-
-      <section className="shop-wrap shop-section">
-        <h2>Looks to start from</h2>
-        <div className="preset-grid">
-          {presets.map((pr, i) => (
-            <Link key={pr.name} to={`/shop/design/kit?preset=${i}`} className="preset-card">
-              <div className="preset-media" style={fabricStyle(fabrics[i % fabrics.length].key)}>
-                <div className="pr-sticker"><StickerArt d={pr.sticker} /></div>
-                <div className="pr-keyring"><KeyringArt d={pr.keyring} /></div>
-              </div>
-              <span>{pr.name}</span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="shop-wrap shop-section how">
-        <h2>How a clear sticker works</h2>
-        <div className="how-grid">
-          <div><span className="how-n">1</span><h3>Harvest</h3><p>A fine mesh antenna, almost invisible, collects energy from the Wi-Fi around you.</p></div>
-          <div><span className="how-n">2</span><h3>Beacon</h3><p>When it has enough, the sticker sends a short Bluetooth signal to your keyring or phone.</p></div>
-          <div><span className="how-n">3</span><h3>Check</h3><p>Every morning the app matches what’s in your bag to your timetable, calendar and the weather.</p></div>
-        </div>
-        <p className="muted small">Your design is printed only on the outer border and the center dot, so the antenna keeps working. The dot covers the tiny chip.</p>
-      </section>
-    </>
-  )
-}
-
-/* Designer ------------------------------------------------------------------------ */
-
-const frameOpts: { key: FrameStyle; label: string }[] = [
-  { key: 'none', label: 'Clear' }, { key: 'solid', label: 'Line' }, { key: 'dashed', label: 'Dashed' }, { key: 'dots', label: 'Dots' },
-  { key: 'stripes', label: 'Stripes' }, { key: 'checker', label: 'Checker' }, { key: 'confetti', label: 'Confetti' },
-]
-const dotOpts: { key: DotMark; label: string }[] = [
-  { key: 'logo', label: 'Tagly t' }, { key: 'heart', label: 'Heart' }, { key: 'star', label: 'Star' }, { key: 'initials', label: 'Initials' },
-]
-
-function Swatches({ colors, value, onChange, label }: { colors: { hex: string; name: string }[]; value: string; onChange: (hex: string) => void; label: string }) {
+function Swatches({ colors, value, onChange, label, size = 34 }: { colors: Swatch[]; value: string | null; onChange: (hex: string) => void; label: string; size?: number }) {
   return (
     <div className="swatches" role="radiogroup" aria-label={label}>
       {colors.map((c) => (
         <button key={c.hex} type="button" role="radio" aria-checked={value === c.hex} aria-label={c.name} title={c.name}
-          className={value === c.hex ? 'on' : ''} style={{ background: c.hex }} onClick={() => onChange(c.hex)} />
+          className={value === c.hex ? 'on' : ''} style={{ background: c.hex, width: size, height: size }} onClick={() => onChange(c.hex)} />
       ))}
     </div>
   )
@@ -169,15 +38,13 @@ function Choice<T extends string>({ opts, value, onChange, label }: { opts: { ke
   return (
     <div className="choices" role="radiogroup" aria-label={label}>
       {opts.map((o) => (
-        <button key={o.key} type="button" role="radio" aria-checked={value === o.key} className={value === o.key ? 'on' : ''} onClick={() => onChange(o.key)}>
-          {o.label}
-        </button>
+        <button key={o.key} type="button" role="radio" aria-checked={value === o.key} className={value === o.key ? 'on' : ''} onClick={() => onChange(o.key)}>{o.label}</button>
       ))}
     </div>
   )
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+function Field({ label, hint, children }: { label: string; hint?: ReactNode; children: ReactNode }) {
   return (
     <div className="dfield">
       <div className="dfield-head"><span>{label}</span>{hint && <small>{hint}</small>}</div>
@@ -186,137 +53,587 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   )
 }
 
-function StickerControls({ d, set }: { d: StickerDesign; set: (d: StickerDesign) => void }) {
+/** Horizontal shelf with arrow buttons (Apple-store style). */
+function Shelf({ title, sub, children }: { title: string; sub: string; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const go = (dir: 1 | -1) => ref.current?.scrollBy({ left: dir * (ref.current.clientWidth * 0.8), behavior: 'smooth' })
+  return (
+    <section className="shelf">
+      <div className="shop-wrap shelf-head">
+        <h2><b>{title}</b> <span>{sub}</span></h2>
+        <div className="shelf-arrows">
+          <button type="button" aria-label="Scroll left" onClick={() => go(-1)}><ChevronLeft size={18} /></button>
+          <button type="button" aria-label="Scroll right" onClick={() => go(1)}><ChevronRight size={18} /></button>
+        </div>
+      </div>
+      <div className="shelf-track" ref={ref}>
+        <div className="shelf-inner">{children}</div>
+      </div>
+    </section>
+  )
+}
+
+/* Layout ------------------------------------------------------------------------------- */
+
+function ShopLayout({ children }: { children: ReactNode }) {
+  const { count } = useShop()
+  useEffect(() => { document.title = 'Tagly Store' }, [])
+  return (
+    <div className="shop">
+      <header className="shop-header">
+        <div className="shop-wrap shop-header-inner">
+          <Link to="/shop" className="shop-logo"><LogoMark size={28} /> <b>Tagly</b></Link>
+          <nav className="shop-nav">
+            <NavLink to="/shop" end>Store</NavLink>
+            <NavLink to="/shop/gallery">Gallery</NavLink>
+            <NavLink to="/shop/design/kit">Starter kit</NavLink>
+            <NavLink to="/shop/design/stickers">Sticker tags</NavLink>
+            <NavLink to="/shop/design/hub">Hub</NavLink>
+            <NavLink to="/shop/gallery?tab=cases">Cases</NavLink>
+          </nav>
+          <div className="shop-header-actions">
+            <Link to="/" className="shop-applink"><Smartphone size={16} /> <span>Open app</span></Link>
+            <Link to="/shop/cart" className="shop-cart" aria-label={`Bag, ${count} items`}>
+              <ShoppingBag size={20} />
+              {count > 0 && <span className="shop-cart-count">{count}</span>}
+            </Link>
+          </div>
+        </div>
+      </header>
+      <main>{children}</main>
+      <footer className="shop-footer">
+        <div className="shop-wrap">
+          <p><b>Tagly</b> · Your bag remembers what you forget.</p>
+          <p className="muted">Concept store for a student design project. Prices are proposals; orders are demonstrations and no payment is taken.</p>
+        </div>
+      </footer>
+    </div>
+  )
+}
+
+/* Store home -------------------------------------------------------------------------------- */
+
+const pinkHub: HubDesign = { ...defaultHub, shell: '#F6C6B8', strap: '#F26A3D' }
+const midnightHub: HubDesign = { ...defaultHub, shell: '#1E2433', loop: 'black', strap: null, engraving: 'TAGLY' }
+
+function ShopHome() {
+  const sig = signaturePack()
+  const setSkins = (k: SetKey) => gallery.filter((g) => g.set === k).slice(0, 3).map((g) => g.design)
   return (
     <>
-      <Field label="Shape" hint="40 × 40 mm">
-        <Choice label="Shape" value={d.shape} onChange={(shape) => set({ ...d, shape })} opts={[{ key: 'square', label: 'Rounded square' }, { key: 'circle', label: 'Circle' }]} />
-      </Field>
-      <Field label="Border print" hint="Printed on the outer 4 mm">
-        <Choice label="Border print" value={d.frame} onChange={(frame) => set({ ...d, frame })} opts={frameOpts} />
-      </Field>
-      {d.frame !== 'none' && (
-        <Field label="Border colour">
-          <Swatches label="Border colour" colors={inkColors} value={d.frameColor} onChange={(frameColor) => set({ ...d, frameColor })} />
-        </Field>
-      )}
-      <Field label="Center dot" hint="Covers the chip">
-        <Choice label="Center dot" value={d.dot} onChange={(dot) => set({ ...d, dot })} opts={dotOpts} />
-      </Field>
-      {d.dot === 'initials' && (
-        <Field label="Initials" hint="Up to 3 letters">
-          <input className="dinput" value={d.initials} maxLength={3} placeholder="AB"
-            onChange={(e) => set({ ...d, initials: e.target.value.replace(/[^a-zA-Z0-9가-힣]/g, '') })} />
-        </Field>
-      )}
-      <Field label="Dot colour">
-        <Swatches label="Dot colour" colors={inkColors} value={d.dotColor} onChange={(dotColor) => set({ ...d, dotColor })} />
-      </Field>
+      <section className="shop-wrap store-top">
+        <h1 className="store-title">Store</h1>
+        <div className="store-top-side">
+          <p>Your bag remembers<br />what you forget.</p>
+          <Link to="/shop/gallery" className="slink">Browse the design gallery <ArrowRight size={14} /></Link>
+          <Link to="/" className="slink">Open the Tagly app <ArrowRight size={14} /></Link>
+        </div>
+      </section>
+
+      <nav className="shop-wrap cat-row" aria-label="Categories">
+        <Link to="/shop/design/kit" className="cat"><span className="cat-img duo"><span className="c1"><HubArt d={defaultHub} led="green" /></span><span className="c2"><StickerArt d={sig[1]} /></span></span><span>Starter kit</span></Link>
+        <Link to="/shop/design/hub" className="cat"><span className="cat-img"><HubArt d={pinkHub} led="blue" /></span><span>Keyring hub</span></Link>
+        <Link to="/shop/design/stickers" className="cat"><span className="cat-img trio">{sig.slice(2, 5).map((d, i) => <span key={i} className={`t${i}`}><StickerArt d={d} /></span>)}</span><span>Sticker tags</span></Link>
+        <Link to="/shop/gallery?tab=cases" className="cat"><span className="cat-img case"><CaseArt c={{ key: 'bear', color: '#EDC6C4' }} /></span><span>Cases</span></Link>
+        <Link to="/shop/gallery" className="cat"><span className="cat-img grid4">{[gallery[2], gallery[8], gallery[12], gallery[15]].map((g) => <span key={g.id}><StickerArt d={g.design} /></span>)}</span><span>Design gallery</span></Link>
+        <Link to="/shop/gallery?set=clear" className="cat"><span className="cat-img dark"><StickerArt d={byId('clear-confetti')!.design} /></span><span>Clear stickers</span></Link>
+      </nav>
+
+      <Shelf title="The latest." sub="Fresh sets, softer cases.">
+        <Link to="/shop/design/kit" className="tall-card" style={{ background: '#ECE7FD' }}>
+          <p className="eyebrow">NEW</p><h3>Starter kit</h3><p className="tc-price">{won(products.kit.basePrice)}</p>
+          <div className="tc-art kit"><span className="k-hub"><HubArt d={defaultHub} led="green" /></span>{sig.slice(0, 3).map((d, i) => <span key={i} className={`k-s k-s${i}`}><StickerArt d={d} /></span>)}</div>
+          <span className="tc-plus"><Plus size={18} /></span>
+        </Link>
+        <Link to="/shop/design/case?case=cloud" className="tall-card" style={{ background: '#E3EEF8' }}>
+          <p className="eyebrow">NEW CASE</p><h3>Cloud</h3><p className="tc-price">{won(caseInfo('cloud').price)}</p>
+          <div className="tc-art case"><CaseArt c={{ key: 'cloud', color: '#B8D1EA' }} /></div>
+          <span className="tc-plus"><Plus size={18} /></span>
+        </Link>
+        <Link to="/shop/design/stickers?set=garden" className="tall-card" style={{ background: '#DDF5E8' }}>
+          <p className="eyebrow">SET</p><h3>Garden set</h3><p className="tc-price">from {won(packSizes[0].price)}</p>
+          <div className="tc-art stickers">{setSkins('garden').map((d, i) => <span key={i} className={`s${i}`}><StickerArt d={d} /></span>)}</div>
+          <span className="tc-plus"><Plus size={18} /></span>
+        </Link>
+        <Link to="/shop/design/hub?shell=1E2433" className="tall-card dark" style={{ background: '#1B2130' }}>
+          <p className="eyebrow">ENGRAVE IT</p><h3>Hub in Midnight</h3><p className="tc-price">{won(products.hub.basePrice)}</p>
+          <div className="tc-art hub"><HubArt d={midnightHub} led="blue" /></div>
+          <span className="tc-plus"><Plus size={18} /></span>
+        </Link>
+        <Link to="/shop/design/case?case=bunny" className="tall-card" style={{ background: '#F6E6E4' }}>
+          <p className="eyebrow">NEW CASE</p><h3>Bunny ears</h3><p className="tc-price">{won(caseInfo('bunny').price)}</p>
+          <div className="tc-art case"><CaseArt c={{ key: 'bunny', color: '#EDC6C4' }} /></div>
+          <span className="tc-plus"><Plus size={18} /></span>
+        </Link>
+        <Link to="/shop/design/stickers?set=space" className="tall-card" style={{ background: '#FFE3D7' }}>
+          <p className="eyebrow">SET</p><h3>Space set</h3><p className="tc-price">from {won(packSizes[0].price)}</p>
+          <div className="tc-art stickers">{setSkins('space').map((d, i) => <span key={i} className={`s${i}`}><StickerArt d={d} /></span>)}</div>
+          <span className="tc-plus"><Plus size={18} /></span>
+        </Link>
+      </Shelf>
+
+      <Shelf title="Dress up your hub." sub="Cases slip on in seconds. The light still shines through.">
+        {cases.map((c) => (
+          <Link key={c.key} to={`/shop/design/case?case=${c.key}`} className="white-card">
+            <div className="wc-art"><CaseArt c={{ key: c.key, color: c.colors[0].hex }} /></div>
+            <div className="dots">{c.colors.map((s) => <i key={s.hex} style={{ background: s.hex }} title={s.name} />)}</div>
+            {c.isNew && <p className="new">New</p>}
+            <h3>{c.name}</h3>
+            <p className="price">{won(c.price)}</p>
+          </Link>
+        ))}
+      </Shelf>
+
+      <Shelf title="Sticker sets." sub="Collect them. Swap the skin anytime, keep the tag.">
+        {sets.map((s) => (
+          <Link key={s.key} to={`/shop/gallery?set=${s.key}`} className="set-card" style={s.key === 'clear' ? fabricStyle('navy') : { background: s.tint }}>
+            <div className="set-art">{gallery.filter((g) => g.set === s.key).slice(0, 3).map((g, i) => <span key={g.id} className={`s${i}`}><StickerArt d={g.design} /></span>)}</div>
+            <h3>{s.name}</h3>
+            <p>{s.blurb}</p>
+          </Link>
+        ))}
+      </Shelf>
+
+      <section className="shop-wrap shop-section how">
+        <h2><b>How Tagly works.</b> <span className="muted">Three small things, one habit.</span></h2>
+        <div className="how-grid">
+          <div><span className="how-art"><StickerArt d={sig[0]} /></span><h3>Sticker tags</h3><p>Decorate your laptop, iPad and pencil case. Every sticker is also a tracker, with a paper-thin Bluetooth tag under a skin you can swap.</p></div>
+          <div><span className="how-art"><HubArt d={defaultHub} led="red" /></span><h3>Keyring hub</h3><p>Lives on your bag, knows what’s inside, and glows red and buzzes when something is missing. Green means you’re ready.</p></div>
+          <div><span className="how-art"><LogoMark size={64} /></span><h3>Context-aware app</h3><p>Your timetable, calendar and the forecast become today’s checklist. Lost items are found through a mesh network.</p></div>
+        </div>
+      </section>
     </>
   )
 }
 
-function KeyringControls({ d, set }: { d: KeyringDesign; set: (d: KeyringDesign) => void }) {
+/* Gallery ------------------------------------------------------------------------------- */
+
+function GalleryGrid({ setFilter, color, onPick, compact = false, selectedId }: {
+  setFilter: SetKey | 'all'; color: string | null; onPick: (id: string) => void; compact?: boolean; selectedId?: string
+}) {
+  const list = gallery.filter((g) => (setFilter === 'all' || g.set === setFilter) && (!color || g.design.color === color || g.design.frameColor === color && g.set === 'clear'))
+  return (
+    <div className={`gal-grid ${compact ? 'compact' : ''}`}>
+      {list.map((g) => {
+        const tint = sets.find((s) => s.key === g.set)!.tint
+        return (
+          <button key={g.id} type="button" className={`gal-card ${selectedId === g.id ? 'on' : ''}`} onClick={() => onPick(g.id)}>
+            <span className="gal-img" style={g.set === 'clear' ? fabricStyle('navy') : { background: tint }}>
+              <StickerArt d={g.design} showAntenna={!compact} />
+              {g.isNew && !compact && <em>New</em>}
+            </span>
+            <span className="gal-name">{g.name}</span>
+            {!compact && <span className="gal-set">{sets.find((s) => s.key === g.set)!.name}</span>}
+          </button>
+        )
+      })}
+      {list.length === 0 && <p className="muted">No designs in this colour yet. Pick another colour or customise one.</p>}
+    </div>
+  )
+}
+
+function SetChips({ value, onChange }: { value: SetKey | 'all'; onChange: (v: SetKey | 'all') => void }) {
+  return (
+    <div className="chip-row" role="tablist" aria-label="Sets">
+      <button type="button" role="tab" aria-selected={value === 'all'} className={value === 'all' ? 'on' : ''} onClick={() => onChange('all')}>All</button>
+      {sets.map((s) => (
+        <button key={s.key} type="button" role="tab" aria-selected={value === s.key} className={value === s.key ? 'on' : ''} onClick={() => onChange(s.key)}>{s.name.replace(' set', '')}</button>
+      ))}
+    </div>
+  )
+}
+
+function Gallery() {
+  const [params, setParams] = useSearchParams()
+  const nav = useNavigate()
+  const tab = params.get('tab') === 'cases' ? 'cases' : 'skins'
+  const setFilter = (params.get('set') as SetKey | null) ?? 'all'
+  const [color, setColor] = useState<string | null>(null)
+  const usedColors = stickerColors.filter((c) => gallery.some((g) => g.design.color === c.hex))
+  return (
+    <div className="shop-wrap shop-section">
+      <h1 className="page-title"><b>Design gallery.</b> <span>Pick a look, then make it yours.</span></h1>
+      <div className="seg" role="tablist">
+        <button type="button" role="tab" aria-selected={tab === 'skins'} className={tab === 'skins' ? 'on' : ''} onClick={() => setParams({})}>Sticker skins</button>
+        <button type="button" role="tab" aria-selected={tab === 'cases'} className={tab === 'cases' ? 'on' : ''} onClick={() => setParams({ tab: 'cases' })}>Hub cases</button>
+      </div>
+
+      {tab === 'skins' ? (
+        <>
+          <div className="gal-filters">
+            <SetChips value={setFilter} onChange={(v) => setParams(v === 'all' ? {} : { set: v })} />
+            <div className="color-filter">
+              <button type="button" className={`any ${color === null ? 'on' : ''}`} onClick={() => setColor(null)}>Any colour</button>
+              <Swatches label="Filter by colour" colors={usedColors} value={color} onChange={(c) => setColor(color === c ? null : c)} size={24} />
+            </div>
+          </div>
+          {setFilter !== 'all' && (
+            <div className="set-banner" style={setFilter === 'clear' ? fabricStyle('navy') : { background: sets.find((s) => s.key === setFilter)!.tint }}>
+              <div>
+                <h2>{sets.find((s) => s.key === setFilter)!.name}</h2>
+                <p>{sets.find((s) => s.key === setFilter)!.blurb}</p>
+              </div>
+              <Link to={`/shop/design/stickers?set=${setFilter}`} className="sbtn sbtn-dark">Get the whole set <ArrowRight size={16} /></Link>
+            </div>
+          )}
+          <GalleryGrid setFilter={setFilter} color={color} onPick={(id) => nav(`/shop/design/stickers?design=${id}`)} />
+        </>
+      ) : (
+        <div className="case-grid">
+          {cases.map((c) => (
+            <Link key={c.key} to={`/shop/design/case?case=${c.key}`} className="white-card big">
+              <div className="wc-art"><CaseArt c={{ key: c.key, color: c.colors[0].hex }} /></div>
+              <div className="dots">{c.colors.map((s) => <i key={s.hex} style={{ background: s.hex }} title={s.name} />)}</div>
+              {c.isNew && <p className="new">New</p>}
+              <h3>{c.name}</h3>
+              <p className="muted small">{c.blurb}</p>
+              <p className="price">{won(c.price)}</p>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* Designer ---------------------------------------------------------------------------------- */
+
+const frameOpts: { key: FrameStyle; label: string }[] = [
+  { key: 'none', label: 'Clear' }, { key: 'solid', label: 'Line' }, { key: 'dashed', label: 'Dashed' }, { key: 'dots', label: 'Dots' },
+  { key: 'stripes', label: 'Stripes' }, { key: 'checker', label: 'Checker' }, { key: 'confetti', label: 'Confetti' },
+]
+const dotOpts: { key: DotMark; label: string }[] = [
+  { key: 'logo', label: 'Tagly t' }, { key: 'heart', label: 'Heart' }, { key: 'star', label: 'Star' }, { key: 'initials', label: 'Initials' },
+]
+
+function SkinEditor({ d, set }: { d: StickerDesign; set: (d: StickerDesign) => void }) {
   return (
     <>
-      <Field label="Body colour" hint="Matte finish">
-        <Swatches label="Body colour" colors={bodyColors} value={d.body} onChange={(body) => set({ ...d, body })} />
+      <Field label="Style">
+        <Choice label="Style" value={d.style} onChange={(style) => set({ ...d, style })} opts={[{ key: 'art', label: 'Die-cut art' }, { key: 'clear', label: 'Clear sticker' }]} />
       </Field>
-      <Field label="Ring">
-        <Choice label="Ring" value={d.ring} onChange={(ring) => set({ ...d, ring })} opts={[{ key: 'silver', label: 'Silver' }, { key: 'gold', label: 'Gold' }, { key: 'black', label: 'Black' }]} />
+      {d.style === 'art' ? (
+        <>
+          <Field label="Artwork" hint={`${artInfo[d.art].name} · ${sets.find((s) => s.key === artInfo[d.art].set)!.name}`}>
+            <div className="art-picker">
+              {artOrder.map((k) => (
+                <button key={k} type="button" aria-label={artInfo[k].name} aria-pressed={d.art === k} className={d.art === k ? 'on' : ''}
+                  onClick={() => set({ ...d, art: k })}><StickerArt d={art(k, d.color, d.accent)} /></button>
+              ))}
+            </div>
+          </Field>
+          <Field label="Main colour" hint={colorName(d.color, stickerColors)}>
+            <Swatches label="Main colour" colors={stickerColors} value={d.color} onChange={(color) => set({ ...d, color })} size={30} />
+          </Field>
+          <Field label="Accent colour" hint={colorName(d.accent, stickerColors)}>
+            <Swatches label="Accent colour" colors={stickerColors} value={d.accent} onChange={(accent) => set({ ...d, accent })} size={30} />
+          </Field>
+        </>
+      ) : (
+        <>
+          <Field label="Shape" hint="40 × 40 mm">
+            <Choice label="Shape" value={d.shape} onChange={(shape) => set({ ...d, shape })} opts={[{ key: 'square', label: 'Rounded square' }, { key: 'circle', label: 'Circle' }]} />
+          </Field>
+          <Field label="Border print" hint="Outer 4 mm only">
+            <Choice label="Border print" value={d.frame} onChange={(frame) => set({ ...d, frame })} opts={frameOpts} />
+          </Field>
+          {d.frame !== 'none' && (
+            <Field label="Border colour"><Swatches label="Border colour" colors={stickerColors} value={d.frameColor} onChange={(frameColor) => set({ ...d, frameColor })} size={30} /></Field>
+          )}
+          <Field label="Center dot" hint="Covers the chip">
+            <Choice label="Center dot" value={d.dot} onChange={(dot) => set({ ...d, dot })} opts={dotOpts} />
+          </Field>
+          {d.dot === 'initials' && (
+            <Field label="Initials" hint="Up to 3 letters">
+              <input className="dinput" value={d.initials} maxLength={3} placeholder="AB" onChange={(e) => set({ ...d, initials: e.target.value.replace(/[^a-zA-Z0-9가-힣]/g, '') })} />
+            </Field>
+          )}
+          <Field label="Dot colour"><Swatches label="Dot colour" colors={stickerColors} value={d.dotColor} onChange={(dotColor) => set({ ...d, dotColor })} size={30} /></Field>
+        </>
+      )}
+    </>
+  )
+}
+
+function PackEditor({ pack, setPack, sel, setSel }: { pack: StickerDesign[]; setPack: (p: StickerDesign[]) => void; sel: number; setSel: (i: number) => void }) {
+  const [mode, setMode] = useState<'gallery' | 'custom'>('gallery')
+  const [setFilter, setSetFilter] = useState<SetKey | 'all'>('all')
+  const cur = pack[sel]
+  const setCur = (d: StickerDesign) => setPack(pack.map((x, i) => (i === sel ? d : x)))
+  return (
+    <>
+      <Field label={`Your pack · ${pack.length} tags`} hint="Tap a tag to change it">
+        <div className="slots">
+          {pack.map((d, i) => (
+            <button key={i} type="button" className={`slot ${i === sel ? 'on' : ''}`} onClick={() => setSel(i)} aria-label={`Tag ${i + 1}: ${designLabel(d)}`}
+              style={d.style === 'clear' ? fabricStyle('navy') : undefined}>
+              <StickerArt d={d} showAntenna={false} />
+              <small>{i + 1}</small>
+            </button>
+          ))}
+        </div>
+        <div className="slot-actions">
+          <span className="muted small">Tag {sel + 1}: {designLabel(cur)}</span>
+          <button type="button" className="slink" onClick={() => setPack(pack.map(() => cur))}>Use on all tags</button>
+        </div>
       </Field>
-      <Field label="Engraving" hint={`Up to 10 characters · +${won(ENGRAVING_FEE)}`}>
-        <input className="dinput" value={d.engraving} maxLength={10} placeholder="Your name"
-          onChange={(e) => set({ ...d, engraving: e.target.value.replace(/[^a-zA-Z0-9 .&-]/g, '') })} />
+
+      <div className="seg small" role="tablist">
+        <button type="button" role="tab" aria-selected={mode === 'gallery'} className={mode === 'gallery' ? 'on' : ''} onClick={() => setMode('gallery')}>Choose from gallery</button>
+        <button type="button" role="tab" aria-selected={mode === 'custom'} className={mode === 'custom' ? 'on' : ''} onClick={() => setMode('custom')}>Customise</button>
+      </div>
+
+      {mode === 'gallery' ? (
+        <div className="picker-window">
+          <SetChips value={setFilter} onChange={setSetFilter} />
+          <GalleryGrid compact setFilter={setFilter} color={null}
+            selectedId={gallery.find((g) => JSON.stringify(g.design) === JSON.stringify(cur))?.id}
+            onPick={(id) => {
+              setCur(byId(id)!.design)
+              if (sel < pack.length - 1) setSel(sel + 1)
+            }} />
+          {setFilter !== 'all' && (
+            <button type="button" className="slink" onClick={() => {
+              const skins = gallery.filter((g) => g.set === setFilter).map((g) => g.design)
+              setPack(pack.map((_, i) => skins[i % skins.length]))
+            }}>Fill the pack with the {sets.find((s) => s.key === setFilter)!.name}</button>
+          )}
+        </div>
+      ) : (
+        <div className="dcontrols"><SkinEditor d={cur} set={setCur} /></div>
+      )}
+    </>
+  )
+}
+
+function HubEditor({ hub, set }: { hub: HubDesign; set: (h: HubDesign) => void }) {
+  return (
+    <>
+      <Field label="Shell colour" hint={colorName(hub.shell, hubColors)}>
+        <Swatches label="Shell colour" colors={hubColors} value={hub.shell} onChange={(shell) => set({ ...hub, shell })} size={30} />
       </Field>
-      {d.engraving.trim() && (
+      <Field label="Finish" hint={hub.finish === 'metal' ? '+₩3,000' : undefined}>
+        <Choice label="Finish" value={hub.finish ?? 'matte'} onChange={(finish: Finish) => set({ ...hub, finish })}
+          opts={finishes.map((f) => ({ key: f.key, label: f.fee ? `${f.label} +${won(f.fee)}` : f.label }))} />
+      </Field>
+      <Field label="Key ring">
+        <Choice label="Key ring" value={hub.loop} onChange={(loop) => set({ ...hub, loop })} opts={[{ key: 'silver', label: 'Silver' }, { key: 'gold', label: 'Gold' }, { key: 'black', label: 'Black' }]} />
+      </Field>
+      <Field label="Strap" hint={`+${won(STRAP_FEE)}`}>
+        <div className="strap-row">
+          <button type="button" className={`any ${hub.strap === null ? 'on' : ''}`} onClick={() => set({ ...hub, strap: null })}>None</button>
+          <Swatches label="Strap colour" colors={strapColors} value={hub.strap} onChange={(strap) => set({ ...hub, strap })} size={30} />
+        </div>
+      </Field>
+      <Field label="Engraving" hint={`On the side · +${won(ENGRAVING_FEE)}`}>
+        <input className="dinput" value={hub.engraving} maxLength={10} placeholder="Your name"
+          onChange={(e) => set({ ...hub, engraving: e.target.value.replace(/[^a-zA-Z0-9 .&-]/g, '') })} />
+      </Field>
+      {hub.engraving.trim() && (
         <Field label="Engraving style">
-          <Choice label="Engraving style" value={d.font} onChange={(font) => set({ ...d, font })} opts={[{ key: 'sans', label: 'Modern' }, { key: 'serif', label: 'Classic' }, { key: 'mono', label: 'Mono' }]} />
+          <Choice label="Engraving style" value={hub.font} onChange={(font) => set({ ...hub, font })} opts={[{ key: 'sans', label: 'Modern' }, { key: 'serif', label: 'Classic' }, { key: 'mono', label: 'Mono' }]} />
         </Field>
       )}
     </>
   )
 }
+
+const quickLooks: { label: string; c: Omit<CaseChoice, 'key'> }[] = [
+  { label: 'Glossy white', c: { color: '#FFFFFF', finish: 'gloss', pattern: 'solid' } },
+  { label: 'Gold', c: { color: '#D9B45A', finish: 'metal', pattern: 'solid' } },
+  { label: 'Black & white dots', c: { color: '#16171B', finish: 'gloss', pattern: 'dots', patternColor: '#FFFFFF' } },
+  { label: 'Blush hearts', c: { color: '#EDC6C4', finish: 'matte', pattern: 'hearts', patternColor: '#FFFFFF' } },
+  { label: 'Sky gingham', c: { color: '#FFFFFF', finish: 'matte', pattern: 'gingham', patternColor: '#B8D1EA' } },
+  { label: 'Midnight stripes', c: { color: '#2D3240', finish: 'matte', pattern: 'stripes', patternColor: '#E3D5C3' } },
+]
+
+function CaseEditor({ value, set, allowNone }: { value: CaseChoice | null; set: (c: CaseChoice | null) => void; allowNone: boolean }) {
+  const info = value ? caseInfo(value.key) : null
+  const plain = value?.key === 'leather' || value?.key === 'clear'
+  const colors = plain && info ? info.colors : caseColors
+  return (
+    <>
+      <Field label="Case" hint={value ? `${info!.name} · ${won(casePrice(value))}` : 'Optional'}>
+        <div className="case-picker">
+          {allowNone && (
+            <button type="button" className={`case-opt none ${value === null ? 'on' : ''}`} onClick={() => set(null)}><span>No case</span></button>
+          )}
+          {cases.map((c) => (
+            <button key={c.key} type="button" aria-label={c.name} aria-pressed={value?.key === c.key} className={`case-opt ${value?.key === c.key ? 'on' : ''}`}
+              onClick={() => {
+                const isPlain = c.key === 'leather' || c.key === 'clear'
+                set(isPlain ? { key: c.key, color: c.colors[0].hex } : { ...(value ?? {}), key: c.key, color: value && !['leather', 'clear'].includes(value.key) ? value.color : c.colors[0].hex })
+              }}>
+              <CaseArt c={value && value.key === c.key ? value : { key: c.key, color: c.colors[0].hex }} />
+            </button>
+          ))}
+        </div>
+      </Field>
+      {info && value && (
+        <>
+          <p className="muted small">{info.blurb}</p>
+          {!plain && (
+            <Field label="Quick looks">
+              <div className="choices">
+                {quickLooks.map((q) => (
+                  <button key={q.label} type="button" onClick={() => set({ key: value.key, ...q.c })}>{q.label}</button>
+                ))}
+              </div>
+            </Field>
+          )}
+          <Field label="Colour" hint={colorName(value.color, colors)}>
+            <Swatches label="Case colour" colors={colors} value={value.color} onChange={(color) => set({ ...value, color })} size={30} />
+          </Field>
+          {!plain && (
+            <>
+              <Field label="Finish">
+                <Choice label="Finish" value={value.finish ?? 'matte'} onChange={(finish: Finish) => set({ ...value, finish })}
+                  opts={finishes.map((f) => ({ key: f.key, label: f.fee ? `${f.label} +${won(f.fee)}` : f.label }))} />
+              </Field>
+              <Field label="Pattern" hint={value.pattern && value.pattern !== 'solid' ? `+${won(PATTERN_FEE)}` : undefined}>
+                <Choice label="Pattern" value={value.pattern ?? 'solid'} onChange={(pattern: CasePattern) => set({ ...value, pattern })} opts={patterns} />
+              </Field>
+              {value.pattern && value.pattern !== 'solid' && (
+                <Field label="Pattern colour" hint={colorName(value.patternColor ?? '#FFFFFF', caseColors)}>
+                  <Swatches label="Pattern colour" colors={caseColors} value={value.patternColor ?? null} onChange={(patternColor) => set({ ...value, patternColor })} size={30} />
+                </Field>
+              )}
+            </>
+          )}
+        </>
+      )}
+    </>
+  )
+}
+
+const hubColors: Swatch[] = [...shellColors, { hex: '#FFFFFF', name: 'White' }, { hex: '#16171B', name: 'Black' },
+  { hex: '#D9B45A', name: 'Gold' }, { hex: '#C9CED6', name: 'Silver' }, { hex: '#E3B3A1', name: 'Rose gold' }]
+
+const ledOpts: { key: LedState; label: string }[] = [{ key: 'green', label: 'All packed' }, { key: 'red', label: 'Missing' }, { key: 'blue', label: 'Pairing' }]
 
 function Designer() {
   const { product } = useParams()
   const [params] = useSearchParams()
   const nav = useNavigate()
   const { add } = useShop()
-  const pid = (['kit', 'stickers', 'keyring'].includes(product ?? '') ? product : null) as ProductId | null
-  const preset = presets[Number(params.get('preset'))] ?? presets[0]
-  const [sticker, setSticker] = useState<StickerDesign>(preset.sticker)
-  const [keyring, setKeyring] = useState<KeyringDesign>(preset.keyring)
-  const [pack, setPack] = useState(5)
+  const pid = (['kit', 'stickers', 'hub', 'case'].includes(product ?? '') ? product : null) as ProductId | null
+
+  const initial = useMemo(() => {
+    const designId = params.get('design')
+    const setKey = params.get('set') as SetKey | null
+    const caseKey = params.get('case') as CaseKey | null
+    const shell = params.get('shell')
+    let pack = signaturePack()
+    if (setKey) { const skins = gallery.filter((g) => g.set === setKey).map((g) => g.design); if (skins.length) pack = pack.map((_, i) => skins[i % skins.length]) }
+    if (designId && byId(designId)) pack = [byId(designId)!.design, ...pack.slice(1)]
+    const hub: HubDesign = {
+      ...defaultHub,
+      shell: shell && /^[0-9A-Fa-f]{6}$/.test(shell) ? `#${shell.toUpperCase()}` : defaultHub.shell,
+      case: caseKey && cases.some((c) => c.key === caseKey) ? { key: caseKey, color: caseInfo(caseKey).colors[0].hex } : null,
+    }
+    if (pid === 'case' && !hub.case) hub.case = { key: 'silicone', color: caseInfo('silicone').colors[0].hex }
+    return { pack, hub }
+  }, [params, pid])
+
+  const [packN, setPackN] = useState(5)
+  const [pack, setPack] = useState<StickerDesign[]>(initial.pack)
+  const [sel, setSel] = useState(0)
+  const [hub, setHub] = useState<HubDesign>(initial.hub)
+  const [tab, setTab] = useState<'tags' | 'hub' | 'case'>('tags')
+  const [led, setLed] = useState<LedState>('green')
+  const [fabric, setFabric] = useState<FabricKey>('studio')
   const [qty, setQty] = useState(1)
-  const [tab, setTab] = useState<'sticker' | 'keyring'>('sticker')
-  const [fabric, setFabric] = useState<FabricKey>('navy')
   const [added, setAdded] = useState(false)
 
-  useEffect(() => { setTab(pid === 'keyring' ? 'keyring' : 'sticker'); setPack(pid === 'stickers' ? 5 : 5); setAdded(false) }, [pid])
+  useEffect(() => {
+    setPack(fitPack(initial.pack, 5)); setPackN(5); setSel(0); setHub(initial.hub); setAdded(false)
+    setTab(pid === 'hub' ? 'hub' : pid === 'case' ? 'case' : 'tags')
+  }, [initial, pid])
+
   if (!pid) return <Navigate to="/shop" replace />
 
-  const p = products[pid]
-  const hasSticker = pid !== 'keyring'
-  const hasKeyring = pid !== 'stickers'
-  const price = unitPrice(pid, hasSticker ? pack : undefined, hasKeyring ? keyring : undefined)
+  const hasTags = pid === 'kit' || pid === 'stickers'
+  const hasHub = pid === 'kit' || pid === 'hub'
+  const tabs: { key: 'tags' | 'hub' | 'case'; label: string }[] = []
+  if (hasTags) tabs.push({ key: 'tags', label: 'Sticker tags' })
+  if (hasHub) tabs.push({ key: 'hub', label: 'Hub' })
+  if (pid !== 'stickers') tabs.push({ key: 'case', label: 'Case' })
   const packs = pid === 'kit' ? kitPacks : pid === 'stickers' ? packSizes : []
-  const showSticker = hasSticker && (!hasKeyring || tab === 'sticker')
+  const price = unitPrice(pid, hasTags ? packN : undefined, pid === 'stickers' ? undefined : hub)
+  const p = products[pid]
+  const title = pid === 'case' && hub.case ? `${caseInfo(hub.case.key).name} case` : p.name
+  const showHubStage = pid !== 'stickers'
+  const focusTags = hasTags && tab === 'tags'
+
+  const changePack = (n: number) => { setPackN(n); setPack(fitPack(pack, n)); setSel(Math.min(sel, n - 1)) }
 
   return (
     <div className="shop-wrap designer">
-      <Link to="/shop" className="crumb"><ChevronLeft size={16} /> Shop</Link>
+      <Link to="/shop" className="crumb"><ChevronLeft size={16} /> Store</Link>
       <div className="designer-grid">
         <div className="designer-stage-col">
           <div className="designer-stage" style={fabricStyle(fabric)}>
-            {hasSticker && (
-              <div className={`ds-sticker ${showSticker ? 'focus' : 'dim'} ${hasKeyring ? 'with-keyring' : ''}`} onClick={() => hasKeyring && setTab('sticker')}>
-                <StickerArt d={sticker} />
+            {hasTags && (
+              <div className={`stage-tags ${showHubStage ? (focusTags ? 'focus' : 'dim') : 'solo'}`} onClick={() => showHubStage && setTab('tags')}>
+                <span className="big"><StickerArt d={pack[sel]} /></span>
+                {pack.filter((_, i) => i !== sel).slice(0, 4).map((d, i) => <span key={i} className={`mini m${i}`}><StickerArt d={d} showAntenna={false} /></span>)}
               </div>
             )}
-            {hasKeyring && (
-              <div className={`ds-keyring ${!showSticker ? 'focus' : 'dim'} ${hasSticker ? 'with-sticker' : ''}`} onClick={() => hasSticker && setTab('keyring')}>
-                <KeyringArt d={keyring} />
+            {showHubStage && (
+              <div className={`stage-hub ${hasTags ? (focusTags ? 'dim' : 'focus') : 'solo'} ${hub.case ? 'is-case' : ''}`} onClick={() => hasTags && setTab('hub')}>
+                <HubOrCase hub={hub} led={led} />
               </div>
             )}
-            <div className="fabric-picker" role="group" aria-label="Preview on bag fabric">
+            <div className="fabric-picker" role="group" aria-label="Background">
               {fabrics.map((f) => (
                 <button key={f.key} type="button" aria-label={f.name} aria-pressed={fabric === f.key}
                   className={fabric === f.key ? 'on' : ''} style={{ background: f.a }} onClick={() => setFabric(f.key)} />
               ))}
             </div>
           </div>
-          <p className="muted small center">Preview on {fabrics.find((f) => f.key === fabric)?.name.toLowerCase()}. The clear film lets your bag show through.</p>
+          {showHubStage && (
+            <div className="led-row" role="radiogroup" aria-label="Preview the light">
+              <span className="muted small">Preview the light:</span>
+              {ledOpts.map((o) => (
+                <button key={o.key} type="button" role="radio" aria-checked={led === o.key} className={led === o.key ? 'on' : ''} onClick={() => setLed(o.key)}>
+                  <i className={`led-${o.key}`} /> {o.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="designer-panel">
-          <p className="kicker">{hasSticker && hasKeyring ? 'Design both' : 'Design yours'}</p>
-          <h1>{p.name}</h1>
+          <p className="kicker">{pid === 'kit' ? 'Design everything' : 'Make it yours'}</p>
+          <h1>{title}</h1>
           <p className="muted">{p.tagline}</p>
           <p className="designer-price">{won(price)}</p>
-
-          {hasSticker && hasKeyring && (
-            <div className="dtabs" role="tablist">
-              <button type="button" role="tab" aria-selected={tab === 'sticker'} className={tab === 'sticker' ? 'on' : ''} onClick={() => setTab('sticker')}>Stickers</button>
-              <button type="button" role="tab" aria-selected={tab === 'keyring'} className={tab === 'keyring' ? 'on' : ''} onClick={() => setTab('keyring')}>Keyring</button>
-            </div>
-          )}
-
-          <div className="dcontrols">
-            {showSticker ? <StickerControls d={sticker} set={setSticker} /> : <KeyringControls d={keyring} set={setKeyring} />}
-          </div>
 
           {packs.length > 0 && (
             <Field label="Pack">
               <div className="packs">
                 {packs.map((pk) => (
-                  <button key={pk.n} type="button" className={pack === pk.n ? 'on' : ''} onClick={() => setPack(pk.n)} aria-pressed={pack === pk.n}>
+                  <button key={pk.n} type="button" className={packN === pk.n ? 'on' : ''} onClick={() => changePack(pk.n)} aria-pressed={packN === pk.n}>
                     <b>{pk.label}</b><span>{won(pk.price)}</span>
                   </button>
                 ))}
               </div>
             </Field>
           )}
+
+          {tabs.length > 1 && (
+            <div className="dtabs" role="tablist" style={{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }}>
+              {tabs.map((t) => (
+                <button key={t.key} type="button" role="tab" aria-selected={tab === t.key} className={tab === t.key ? 'on' : ''} onClick={() => setTab(t.key)}>{t.label}</button>
+              ))}
+            </div>
+          )}
+
+          <div className="dcontrols">
+            {tab === 'tags' && hasTags && <PackEditor pack={pack} setPack={setPack} sel={sel} setSel={setSel} />}
+            {tab === 'hub' && hasHub && <HubEditor hub={hub} set={setHub} />}
+            {tab === 'case' && <CaseEditor value={hub.case} set={(c) => setHub({ ...hub, case: c })} allowNone={pid !== 'case'} />}
+          </div>
 
           <div className="buy-row">
             <div className="qty" aria-label="Quantity">
@@ -325,24 +642,26 @@ function Designer() {
               <button type="button" aria-label="Increase" onClick={() => setQty(Math.min(9, qty + 1))}><Plus size={16} /></button>
             </div>
             <button type="button" className="sbtn sbtn-dark grow" onClick={() => {
-              add({ product: pid, qty, pack: hasSticker ? pack : undefined, sticker: hasSticker ? sticker : undefined, keyring: hasKeyring ? keyring : undefined, unitPrice: price })
+              add({
+                product: pid, qty, pack: hasTags ? packN : undefined, stickers: hasTags ? pack : undefined,
+                hub: pid === 'stickers' ? undefined : hub, unitPrice: price,
+              })
               setAdded(true)
             }}>
-              <ShoppingBag size={18} /> Add to cart · {won(price * qty)}
+              <ShoppingBag size={18} /> Add to bag · {won(price * qty)}
             </button>
           </div>
           {added && (
             <div className="added-note" role="status">
-              <Check size={16} /> Added to your cart.
-              <button type="button" className="slink" onClick={() => nav('/shop/cart')}>View cart</button>
+              <Check size={16} /> Added to your bag.
+              <button type="button" className="slink" onClick={() => nav('/shop/cart')}>View bag</button>
             </div>
           )}
 
           <ul className="includes">
             {p.includes.map((t) => <li key={t}><Check size={15} /> {t}</li>)}
-            {hasSticker && <li><Check size={15} /> Prints stay on the border so the antenna keeps working</li>}
           </ul>
-          <button type="button" className="slink reset" onClick={() => { setSticker(defaultSticker); setKeyring(defaultKeyring) }}>
+          <button type="button" className="slink reset" onClick={() => { setPack(fitPack(signaturePack(), packN)); setHub(pid === 'case' ? initial.hub : defaultHub); setSel(0) }}>
             <RotateCcw size={14} /> Reset design
           </button>
         </div>
@@ -351,29 +670,42 @@ function Designer() {
   )
 }
 
-/* Cart ---------------------------------------------------------------------------- */
+/* Bag ---------------------------------------------------------------------------------- */
 
 function LineThumb({ l }: { l: CartLine }) {
+  const first = l.stickers?.[0]
+  const showHub = l.product !== 'stickers' && l.hub
   return (
-    <div className="line-thumb" style={fabricStyle('navy')}>
-      {l.sticker && <div className={l.keyring ? 'lt-sticker small' : 'lt-sticker'}><StickerArt d={l.sticker} showAntenna={false} /></div>}
-      {l.keyring && <div className={l.sticker ? 'lt-keyring small' : 'lt-keyring'}><KeyringArt d={l.keyring} /></div>}
+    <div className="line-thumb" style={fabricStyle('studio')}>
+      {first && <div className={showHub ? 'lt-sticker small' : 'lt-sticker'}><StickerArt d={first} showAntenna={false} /></div>}
+      {showHub && <div className={first ? 'lt-hub small' : 'lt-hub'}><HubOrCase hub={l.hub!} /></div>}
     </div>
   )
 }
 
 function lineSummary(l: CartLine) {
   const parts: string[] = []
-  if (l.pack) parts.push(`${l.pack} stickers`)
-  if (l.sticker) {
-    const s = l.sticker
-    parts.push(`${s.shape === 'circle' ? 'Circle' : 'Square'} · ${frameOpts.find((f) => f.key === s.frame)?.label.toLowerCase()} border · ${s.dot === 'initials' ? `“${(s.initials || 'AB').toUpperCase()}”` : dotOpts.find((d) => d.key === s.dot)?.label.toLowerCase()} dot`)
+  if (l.stickers) {
+    const names = Array.from(new Set(l.stickers.map(designLabel)))
+    parts.push(`${l.stickers.length} tags: ${names.slice(0, 3).join(', ')}${names.length > 3 ? ` +${names.length - 3} more` : ''}`)
   }
-  if (l.keyring) {
-    const k = l.keyring
-    parts.push(`${bodyColors.find((c) => c.hex === k.body)?.name ?? 'Custom'} keyring · ${k.ring} ring${k.engraving.trim() ? ` · “${k.engraving.toUpperCase()}”` : ''}`)
+  if (l.hub && (l.product === 'kit' || l.product === 'hub')) {
+    const h = l.hub
+    parts.push(`${colorName(h.shell, hubColors)}${h.finish && h.finish !== 'matte' ? ` ${h.finish === 'gloss' ? 'glossy' : 'metallic'}` : ''} hub · ${h.loop} ring${h.strap ? ` · ${colorName(h.strap, strapColors)} strap` : ''}${h.engraving.trim() ? ` · “${h.engraving.toUpperCase()}”` : ''}`)
+  }
+  if (l.hub?.case) {
+    const c = caseInfo(l.hub.case.key)
+    const cc = l.hub.case
+    const fin = cc.finish && cc.finish !== 'matte' ? ` ${cc.finish === 'gloss' ? 'glossy' : 'metallic'}` : ''
+    const pat = cc.pattern && cc.pattern !== 'solid' ? ` · ${patterns.find((x) => x.key === cc.pattern)!.label.toLowerCase()}` : ''
+    parts.push(`${c.name} case · ${colorName(cc.color, [...caseColors, ...c.colors])}${fin}${pat}`)
   }
   return parts
+}
+
+function lineName(l: CartLine) {
+  if (l.product === 'case' && l.hub?.case) return `${caseInfo(l.hub.case.key).name} case`
+  return products[l.product].name
 }
 
 function Cart() {
@@ -383,11 +715,11 @@ function Cart() {
   const toFree = FREE_SHIPPING_FROM - subtotal
   return (
     <div className="shop-wrap shop-section narrow">
-      <h1>Your cart</h1>
+      <h1 className="page-title"><b>Your bag.</b></h1>
       {cart.length === 0 ? (
         <div className="empty-cart">
           <Package size={36} />
-          <p>Your cart is empty.</p>
+          <p>Your bag is empty.</p>
           <Link to="/shop/design/kit" className="sbtn sbtn-dark">Design your kit</Link>
         </div>
       ) : (
@@ -397,7 +729,7 @@ function Cart() {
               <li key={l.id} className="cart-line">
                 <LineThumb l={l} />
                 <div className="cl-info">
-                  <b>{products[l.product].name}</b>
+                  <b>{lineName(l)}</b>
                   {lineSummary(l).map((t) => <span key={t} className="muted small">{t}</span>)}
                   <div className="cl-actions">
                     <div className="qty small" aria-label="Quantity">
@@ -418,7 +750,7 @@ function Cart() {
             <div className="sum-row"><span>Shipping</span><b>{shipping === 0 ? 'Free' : won(shipping)}</b></div>
             {toFree > 0 && <p className="ship-hint"><Truck size={15} /> Add {won(toFree)} more for free shipping.</p>}
             <div className="sum-row total"><span>Total</span><b>{won(subtotal + shipping)}</b></div>
-            <button type="button" className="sbtn sbtn-dark block" onClick={() => nav('/shop/checkout')}>Checkout <ArrowRight size={18} /></button>
+            <button type="button" className="sbtn sbtn-dark block" onClick={() => nav('/shop/checkout')}>Check out <ArrowRight size={18} /></button>
             <Link to="/shop" className="slink center-block">Keep shopping</Link>
           </aside>
         </div>
@@ -427,7 +759,7 @@ function Cart() {
   )
 }
 
-/* Checkout ------------------------------------------------------------------------ */
+/* Checkout ------------------------------------------------------------------------------------ */
 
 function Checkout() {
   const { cart, subtotal, placeOrder } = useShop()
@@ -459,8 +791,8 @@ function Checkout() {
 
   return (
     <div className="shop-wrap shop-section narrow">
-      <Link to="/shop/cart" className="crumb"><ChevronLeft size={16} /> Cart</Link>
-      <h1>Checkout</h1>
+      <Link to="/shop/cart" className="crumb"><ChevronLeft size={16} /> Bag</Link>
+      <h1 className="page-title"><b>Check out.</b></h1>
       <form className="cart-grid" onSubmit={(e) => {
         e.preventDefault(); setTried(true)
         if (!valid) return
@@ -480,7 +812,6 @@ function Checkout() {
           </div>
           {input('address', 'Address', { autoComplete: 'street-address', placeholder: 'e.g. 25-2 Sungkyunkwan-ro, Jongno-gu, Seoul' })}
           {input('detail', 'Apartment, room (optional)')}
-
           <h2>Shipping</h2>
           <div className="ship-opts">
             <label className={method === 'standard' ? 'on' : ''}>
@@ -494,7 +825,6 @@ function Checkout() {
               <b>{won(SHIPPING_EXPRESS)}</b>
             </label>
           </div>
-
           <h2>Payment</h2>
           <div className="demo-pay">
             <b>Demo checkout</b>
@@ -506,7 +836,7 @@ function Checkout() {
           {cart.map((l) => (
             <div key={l.id} className="mini-line">
               <LineThumb l={l} />
-              <span><b>{products[l.product].name}</b><small className="muted">× {l.qty}</small></span>
+              <span><b>{lineName(l)}</b><small className="muted">× {l.qty}</small></span>
               <b>{won(l.unitPrice * l.qty)}</b>
             </div>
           ))}
@@ -521,7 +851,7 @@ function Checkout() {
   )
 }
 
-/* Confirmation ---------------------------------------------------------------- */
+/* Confirmation ------------------------------------------------------------------------------- */
 
 function OrderDone() {
   const { id } = useParams()
@@ -541,7 +871,7 @@ function OrderDone() {
         {order.lines.map((l) => (
           <div key={l.id} className="mini-line">
             <LineThumb l={l} />
-            <span><b>{products[l.product].name}</b><small className="muted">{lineSummary(l).join(' · ')}</small></span>
+            <span><b>{lineName(l)}</b><small className="muted">{lineSummary(l).join(' · ')}</small></span>
             <b>× {l.qty}</b>
           </div>
         ))}
@@ -549,17 +879,17 @@ function OrderDone() {
       </div>
       <div className="done-next">
         <h2>While you wait</h2>
-        <p className="muted">Set up the app now: add your timetable and items, and your stickers will pair in seconds when they arrive.</p>
+        <p className="muted">Set up the app now: add your timetable and items, and your tags will pair in seconds when they arrive.</p>
         <div className="hero-cta center">
           <Link to="/" className="sbtn sbtn-dark"><Smartphone size={18} /> Open the Tagly app</Link>
-          <Link to="/shop" className="sbtn sbtn-light">Back to shop</Link>
+          <Link to="/shop" className="sbtn sbtn-light">Back to store</Link>
         </div>
       </div>
     </div>
   )
 }
 
-/* Entry ----------------------------------------------------------------------- */
+/* Entry ------------------------------------------------------------------------------------- */
 
 export default function ShopApp() {
   return (
@@ -567,6 +897,7 @@ export default function ShopApp() {
       <ShopLayout>
         <Routes>
           <Route index element={<ShopHome />} />
+          <Route path="gallery" element={<Gallery />} />
           <Route path="design/:product" element={<Designer />} />
           <Route path="cart" element={<Cart />} />
           <Route path="checkout" element={<Checkout />} />
@@ -577,4 +908,3 @@ export default function ShopApp() {
     </ShopProvider>
   )
 }
-

@@ -13,9 +13,12 @@ Mobile web app built from the Tagly Figma prototype (flows) and UI spec (visual 
 - **Today**: packing list = item rules (always / classes / event keywords / weather) × today's schedule × forecast. Tap **Pack** to check items off (or let the keyring do it).
 - **Items, Find, Settings**: item details and rules, ring / directions / lost mode, keyring feedback, quiet hours, places, privacy.
 
-- **Shop (`/shop`)**: design your own clear stickers (shape, border print, colours, center dot / initials) and keyring
-  (body colour, ring, engraving) with a live preview on bag fabric; cart, checkout and order confirmation.
-  The checkout is a demo: no payment details are collected and nothing is charged.
+- **Store (`/shop`)**: Apple-store-style home (categories, product shelves), a **design gallery** of ready-made sticker
+  skins (Weather, Classic, Space, Garden, Charge, Music, Clear sets) and hub cases, and a designer:
+  - sticker tags: build a pack slot by slot, pick from the gallery or customise art, main/accent colours (18), or clear stickers
+  - keyring hub (Ø 38 mm): shell colour, matte/glossy/metallic finish, key ring, strap, engraving, LED light preview
+  - hub cases (silicone, bear/bunny/cat ears, cloud, heart, clear, leather): any colour, finish and pattern (polka dots, stripes, checker, gingham, hearts)
+  - bag, demo checkout (no payment details collected, nothing charged) and order confirmation
 
 Stickers, keyring and Bluetooth are simulated.
 
