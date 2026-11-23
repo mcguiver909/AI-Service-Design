@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import {
   ENGRAVING_FEE, FREE_SHIPPING_FROM, PATTERN_FEE, SHIPPING_EXPRESS, STRAP_FEE, ShopProvider, art, artInfo, artOrder, byId, caseColors, caseInfo, casePrice, cases, finishes, patterns,
-  colorName, defaultHub, designLabel, fitPack, gallery, kitPacks, packSizes, products, sets, shellColors, shippingFor, signaturePack,
+  basicPack, basicSticker, colorName, defaultHub, designLabel, fitPack, gallery, kitPacks, packSizes, products, sets, shellColors, shippingFor, signaturePack,
   stickerColors, strapColors, unitPrice, useShop, won,
 } from './shopStore'
 import type {
@@ -131,7 +131,7 @@ function ShopHome() {
       </section>
 
       <nav className="shop-wrap cat-row" aria-label="Categories">
-        <Link to="/shop/design/kit" className="cat"><span className="cat-img duo"><span className="c1"><HubArt d={defaultHub} led="green" /></span><span className="c2"><StickerArt d={sig[1]} /></span></span><span>Starter kit</span></Link>
+        <Link to="/shop/design/kit" className="cat"><span className="cat-img duo"><span className="c1"><HubArt d={defaultHub} led="green" /></span><span className="c2 clear-chip"><StickerArt d={basicSticker} /></span></span><span>Starter kit</span></Link>
         <Link to="/shop/design/hub" className="cat"><span className="cat-img"><HubArt d={pinkHub} led="blue" /></span><span>Keyring hub</span></Link>
         <Link to="/shop/design/stickers" className="cat"><span className="cat-img trio">{sig.slice(2, 5).map((d, i) => <span key={i} className={`t${i}`}><StickerArt d={d} /></span>)}</span><span>Sticker tags</span></Link>
         <Link to="/shop/gallery?tab=cases" className="cat"><span className="cat-img case"><CaseArt c={{ key: 'bear', color: '#EDC6C4' }} /></span><span>Cases</span></Link>
@@ -140,9 +140,9 @@ function ShopHome() {
       </nav>
 
       <Shelf title="The latest." sub="Fresh sets, softer cases.">
-        <Link to="/shop/design/kit" className="tall-card" style={{ background: '#ECE7FD' }}>
-          <p className="eyebrow">NEW</p><h3>Starter kit</h3><p className="tc-price">{won(products.kit.basePrice)}</p>
-          <div className="tc-art kit"><span className="k-hub"><HubArt d={defaultHub} led="green" /></span>{sig.slice(0, 3).map((d, i) => <span key={i} className={`k-s k-s${i}`}><StickerArt d={d} /></span>)}</div>
+        <Link to="/shop/design/kit" className="tall-card dark" style={fabricStyle('navy')}>
+          <p className="eyebrow">THE BASICS</p><h3>Starter kit</h3><p className="tc-price">{won(products.kit.basePrice)}</p>
+          <div className="tc-art kit"><span className="k-hub"><HubArt d={defaultHub} led="green" /></span>{[0, 1, 2].map((i) => <span key={i} className={`k-s k-s${i}`}><StickerArt d={basicSticker} /></span>)}</div>
           <span className="tc-plus"><Plus size={18} /></span>
         </Link>
         <Link to="/shop/design/case?case=cloud" className="tall-card" style={{ background: '#E3EEF8' }}>
@@ -523,7 +523,7 @@ function Designer() {
     const setKey = params.get('set') as SetKey | null
     const caseKey = params.get('case') as CaseKey | null
     const shell = params.get('shell')
-    let pack = signaturePack()
+    let pack = pid === 'kit' && !designId && !setKey ? basicPack(5) : signaturePack()
     if (setKey) { const skins = gallery.filter((g) => g.set === setKey).map((g) => g.design); if (skins.length) pack = pack.map((_, i) => skins[i % skins.length]) }
     if (designId && byId(designId)) pack = [byId(designId)!.design, ...pack.slice(1)]
     const hub: HubDesign = {
@@ -541,12 +541,13 @@ function Designer() {
   const [hub, setHub] = useState<HubDesign>(initial.hub)
   const [tab, setTab] = useState<'tags' | 'hub' | 'case'>('tags')
   const [led, setLed] = useState<LedState>('green')
-  const [fabric, setFabric] = useState<FabricKey>('studio')
+  const [fabric, setFabric] = useState<FabricKey>(pid === 'kit' ? 'navy' : 'studio')
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
 
   useEffect(() => {
     setPack(fitPack(initial.pack, 5)); setPackN(5); setSel(0); setHub(initial.hub); setAdded(false)
+    setFabric(pid === 'kit' ? 'navy' : 'studio')
     setTab(pid === 'hub' ? 'hub' : pid === 'case' ? 'case' : 'tags')
   }, [initial, pid])
 
@@ -565,7 +566,8 @@ function Designer() {
   const showHubStage = pid !== 'stickers'
   const focusTags = hasTags && tab === 'tags'
 
-  const changePack = (n: number) => { setPackN(n); setPack(fitPack(pack, n)); setSel(Math.min(sel, n - 1)) }
+  const filler = pid === 'kit' ? basicPack(1) : signaturePack()
+  const changePack = (n: number) => { setPackN(n); setPack(fitPack(pack, n, filler)); setSel(Math.min(sel, n - 1)) }
 
   return (
     <div className="shop-wrap designer">
@@ -604,7 +606,7 @@ function Designer() {
         </div>
 
         <div className="designer-panel">
-          <p className="kicker">{pid === 'kit' ? 'Design everything' : 'Make it yours'}</p>
+          <p className="kicker">{pid === 'kit' ? 'The basics' : 'Make it yours'}</p>
           <h1>{title}</h1>
           <p className="muted">{p.tagline}</p>
           <p className="designer-price">{won(price)}</p>
@@ -661,8 +663,8 @@ function Designer() {
           <ul className="includes">
             {p.includes.map((t) => <li key={t}><Check size={15} /> {t}</li>)}
           </ul>
-          <button type="button" className="slink reset" onClick={() => { setPack(fitPack(signaturePack(), packN)); setHub(pid === 'case' ? initial.hub : defaultHub); setSel(0) }}>
-            <RotateCcw size={14} /> Reset design
+          <button type="button" className="slink reset" onClick={() => { setPack(pid === 'kit' ? basicPack(packN) : fitPack(signaturePack(), packN)); setHub(pid === 'case' ? initial.hub : defaultHub); setSel(0) }}>
+            <RotateCcw size={14} /> {pid === 'kit' ? 'Back to the basic kit' : 'Reset design'}
           </button>
         </div>
       </div>

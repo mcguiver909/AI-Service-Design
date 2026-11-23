@@ -133,7 +133,7 @@ export interface HubDesign {
   /** Optional slip-on case. */
   case: CaseChoice | null
 }
-export const defaultHub: HubDesign = { shell: '#F4F5F7', loop: 'silver', strap: '#F26A3D', engraving: '', font: 'sans', case: null }
+export const defaultHub: HubDesign = { shell: '#F4F5F7', loop: 'silver', strap: null, engraving: '', font: 'sans', case: null }
 
 /* Gallery ------------------------------------------------------------------ */
 
@@ -261,8 +261,8 @@ export type ProductId = 'kit' | 'stickers' | 'hub' | 'case'
 
 export const products: Record<ProductId, { id: ProductId; name: string; tagline: string; includes: string[]; basePrice: number }> = {
   kit: {
-    id: 'kit', name: 'Starter kit', tagline: 'Keyring hub + a pack of sticker tags.',
-    includes: ['Tagly keyring hub (Ø 38 mm, USB-C)', 'Sticker tags with swappable skins', 'App access, no subscription'], basePrice: 49000,
+    id: 'kit', name: 'Starter kit', tagline: 'The basics: a plain hub and clear sticker tags. Decorate later, or now.',
+    includes: ['Tagly keyring hub (Ø 38 mm, USB-C)', 'Clear sticker tags, skins sold separately', 'App access, no subscription'], basePrice: 49000,
   },
   stickers: {
     id: 'stickers', name: 'Sticker tags', tagline: 'Stickers that happen to be trackers.',
@@ -315,10 +315,13 @@ export function shippingFor(subtotal: number, method: 'standard' | 'express') {
   return subtotal >= FREE_SHIPPING_FROM ? 0 : SHIPPING_STANDARD
 }
 
-/** Resize a pack, keeping existing designs and repeating the signature set. */
-export function fitPack(list: StickerDesign[], n: number) {
-  const sig = signaturePack()
-  return Array.from({ length: n }, (_, i) => list[i] ?? sig[i % sig.length])
+/** The plain starter sticker: clear, no border, just the Tagly dot. */
+export const basicSticker: StickerDesign = clear({})
+export const basicPack = (n: number) => Array.from({ length: n }, () => basicSticker)
+
+/** Resize a pack, keeping existing designs and filling new slots from `filler`. */
+export function fitPack(list: StickerDesign[], n: number, filler: StickerDesign[] = signaturePack()) {
+  return Array.from({ length: n }, (_, i) => list[i] ?? filler[i % filler.length])
 }
 
 /* Cart -------------------------------------------------------------------- */
