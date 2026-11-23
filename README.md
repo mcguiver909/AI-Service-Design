@@ -1,40 +1,67 @@
 # Tagly · Never leave without it
 
-Tagly checks your bag every morning and tells you what's missing before you walk out the door.
-Mobile web app built from the Tagly Figma prototype (flows) and UI spec (visual design).
+Tagly is a smart-sticker service for the things you carry. Clear sticker tags go on your items, a small keyring hub
+lives on your bag, and the app works out what you need each day from your schedule, calendar and the weather.
+When you head out without something, the keyring buzzes; when you leave something behind, Tagly remembers where.
+
+Mobile web app built from the Tagly Figma prototype (flows) and UI spec (visual design), plus a store site for
+custom stickers, hubs and cases. Built for the *AI Service Design* course at Sungkyunkwan University.
 
 ## What works
 
-- **Sign in with Google** (one tap = sign-up). Each Google account gets its own items, timetable and settings.
-  "Explore the demo" loads sample data; "Continue without Google" keeps everything on this device.
-- **Weekly schedule**: add anything you do every week (name, days, start/end, place) — work, gym, lessons, classes. Items can be linked to schedules.
-- **Google Calendar (read-only)**: today's events from the calendars you pick, merged with your timetable.
-- **Live weather** (Open-Meteo, no key): current temperature, next 8 hours, rain chance. Rain/cold/sun rules add items automatically.
-- **Today**: packing list = item rules (always / weekly schedules / event keywords / weather) × today's schedule × forecast. Tap **Pack** to check items off (or let the keyring do it).
-- **Tagly AI** (Today card, Find, Settings → Tagly AI):
-  - *Predict*: reads event titles (Korean or English) and the forecast and suggests what to add, with a reason and confidence.
-    “Team meeting” → laptop + charger; rain 80% from 3 PM → umbrella. Suggests new things to tag when you don't own one yet.
-  - *Prioritize*: a forget-risk model on your bag history (weekday, rainy days, event types) flags what you're likely to leave behind.
-  - *Detect*: departure detection fuses keyring motion, leaving a saved place and your next event (simulated demo).
-  - *Locate*: ranks where a left-behind item probably is (where the signal dropped, where you spent the day).
-  - *Learn*: “Add” / “Not today” tune future suggestions; accepting the same idea twice turns it into an automatic rule.
-  - Runs **on-device** by default. With `ANTHROPIC_API_KEY` set in Vercel, `/api/ai` uses **Claude** instead (falls back on any error).
-- **Items, Find, Settings**: item details and rules, ring / directions / lost mode, keyring feedback, quiet hours, places, privacy.
+### App (`/`)
 
-- **Store (`/shop`)**: Apple-store-style home (categories, product shelves), a **design gallery** of ready-made sticker
-  skins (Weather, Classic, Space, Garden, Charge, Music, Clear sets) and hub cases, and a designer:
-  - sticker tags: build a pack slot by slot, pick from the gallery or customise art, main/accent colours (18), or clear stickers
-  - keyring hub (Ø 38 mm): shell colour, matte/glossy/metallic finish, key ring, strap, engraving, LED light preview
-  - hub cases (silicone, bear/bunny/cat ears, cloud, heart, clear, leather): any colour, finish and pattern (polka dots, stripes, checker, gingham, hearts)
-  - bag, demo checkout (no payment details collected, nothing charged) and order confirmation
+- **Sign in with Google** (one tap = sign-up). Each account gets its own items, stickers, schedule and settings.
+  - **Explore the demo** loads a sample day with four weeks of bag history.
+  - **Continue without Google** keeps everything on this device.
+  - If the site has no Google client ID yet, sign-in runs in **preview mode** with a sample calendar.
+- **Today**, the start-of-day screen, from top to bottom:
+  - "Good morning, *nickname*": time-aware greeting (nickname in Settings → Account) and keyring status.
+  - **Today's schedule**: weekly schedule + selected Google calendars.
+  - **Weather** (Open-Meteo, no key): now, high/low, next 8 hours with rain chance.
+  - **Packing list** with progress. Built from item rules (always / weekly schedules / event keywords / weather)
+    × today's schedule × forecast. Tap **Pack**, or let the keyring do it. Items you often forget are flagged.
+  - **Tagly AI suggests**: what today might need that isn't on the list yet, with one-tap **Add** or ✕.
+- **Items** has two tabs:
+  - **Items**: each item, its status, sticker ID and battery; rules for when you need it.
+  - **Stickers**: every registered sticker and the item it's on. Register new stickers by scanning, then attach,
+    move, swap, detach or remove them. Add item can reuse a free sticker or scan a new one.
+- **Find**: map, ring, directions, lost mode, and Tagly AI's ranking of where a left-behind item probably is.
+- **Settings**: account and nickname, weekly schedule, Google Calendar, weather, keyring light/vibration,
+  morning check, quiet hours, alert types, places, Tagly AI, privacy and data deletion.
 
-Stickers, keyring and Bluetooth are simulated.
+### Tagly AI
+
+| Step | What it does | In this build |
+|---|---|---|
+| **Predict** | Reads event titles (Korean or English) and the forecast and suggests what to add, with a reason. “팀플 회의” → laptop, charger; rain 80% from 3 PM → umbrella. Suggests new things to tag when you don't own one yet. | Live |
+| **Prioritize** | A forget-risk model on your bag history (weekday, rainy days, event types) flags what you're likely to leave behind: “Left behind on 3 of your last 4 Mondays · 69%”. | Live |
+| **Detect** | Departure detection fuses keyring motion, leaving a saved place and your next event, so the reminder lands as you walk out. | Simulated (Settings → Tagly AI → Try departure detection) |
+| **Locate** | When an item drops out of range, the phone saves the spot. Tagly ranks where it most likely is from where the signal dropped and where you spent the day. | Live |
+| **Learn** | “Add” and ✕ tune future suggestions. Accept the same idea twice and it becomes an automatic rule. | Live |
+
+Runs **on-device** by default (no key, nothing leaves the browser). With `ANTHROPIC_API_KEY` set in Vercel,
+`/api/ai` uses **Claude** for the suggestions instead and falls back to on-device on any error.
+
+### Store (`/shop`)
+
+- **Meet Tagly** film pops up on the first visit (✕, the backdrop or Esc closes it; “Watch the film” replays it).
+- Apple-store-style home with categories and product shelves.
+- **Design gallery** of ready-made sticker skins (Clear, Weather, Classic, Space, Garden, Charge, Music) and hub cases.
+- **Designer**:
+  - Sticker tags: build a pack slot by slot from the gallery, customise art and colours (18), choose clear stickers,
+    or **upload your own PNG/JPEG** with an automatic die-cut line for each image.
+  - Keyring hub (Ø 38 mm): shell colour, matte/glossy/metallic finish, key ring, strap, engraving, LED preview.
+  - Hub cases (silicone, bear/bunny/cat ears, cloud, heart, clear, leather): any colour, finish and pattern.
+- Bag, demo checkout (no payment details collected, nothing charged) and order confirmation.
+
+Stickers, keyring, Bluetooth and departure sensing are simulated; the app shows how the service behaves.
 
 ## Run locally
 
 ```bash
 npm install
-cp .env.example .env.local      # put your Google client ID in it
+cp .env.example .env.local      # put your Google client ID in it (optional)
 npm run dev                     # http://localhost:5173
 ```
 
@@ -54,22 +81,38 @@ npm run dev                     # http://localhost:5173
 Changes in Google Cloud can take a few minutes to apply. An `origin_mismatch` error means the site's address
 isn't in the authorized JavaScript origins.
 
-## Privacy
-
-Calendar access is read-only and happens directly between the browser and Google.
-The only server code is the optional `/api/ai` function: with Claude on, it receives event titles, item names and the forecast
-(never the account, location or bag history) and forwards them to the Anthropic API.
-The access token is kept for the browser session only. App data is stored in the browser (localStorage) per account.
-
 ## Tagly AI on Claude (optional)
 
 Vercel → Project → Settings → Environment Variables → `ANTHROPIC_API_KEY` = your key (from console.anthropic.com) → Redeploy.
 `TAGLY_AI_MODEL` overrides the model (default `claude-haiku-5-5`). Settings → Tagly AI shows whether it's connected.
 
+## Privacy
+
+- Calendar access is read-only and happens directly between the browser and Google. The access token lasts for the browser session only.
+- App data (items, stickers, schedule, bag history) is stored in the browser (localStorage), separately per account.
+- The only server code is the optional `/api/ai` function. With Claude on, it receives event titles, item names and
+  the forecast (never the account, location or bag history) and forwards them to the Anthropic API.
+
+## Project structure
+
+```
+api/ai.ts                 Vercel function: Tagly AI on Claude (optional)
+src/store.tsx             app state, accounts, packing-list rules, stickers, demo data
+src/ai.ts                 Tagly AI: suggestions, forget risk, likely places, departure fusion
+src/google.ts, sync.tsx   Google sign-in and Calendar sync
+src/weather.ts            Open-Meteo forecast
+src/screens/              Today, Items, Stickers, Find, Settings, Tagly AI, onboarding, login
+src/components/           UI kit, AI card, item form, icons, map
+src/shop/                 store site: home, gallery, designer, die-cut generator, cart, checkout
+public/media/             Meet Tagly film and poster
+```
+
 ## Deploy
 
-Push to GitHub → Vercel builds automatically (`npm run build`, output `dist`). `vercel.json` makes deep links work.
+Push to GitHub → Vercel builds automatically (`npm run build`, output `dist`). `vercel.json` makes deep links work
+and keeps `/api` for the AI function.
 
 ## Stack
 
-React 19 · TypeScript · Vite · React Router · Google Identity Services · Google Calendar API · Open-Meteo · Claude (optional, Vercel function) · lucide-react · Inter
+React 19 · TypeScript · Vite · React Router · Google Identity Services · Google Calendar API · Open-Meteo ·
+Claude (optional, Vercel function) · lucide-react · Inter
