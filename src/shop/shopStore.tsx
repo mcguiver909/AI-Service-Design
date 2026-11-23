@@ -167,8 +167,10 @@ export const gallery: GalleryDesign[] = [
   { id: 'cherry', name: 'Cherry', set: 'garden', design: art('cherry', '#E8453C', '#2DBE6C'), isNew: true },
   { id: 'bolt', name: 'Bolt', set: 'charge', design: art('bolt', '#3158FF', '#9CC7F7') },
   { id: 'bolt-sun', name: 'Bolt · Volt', set: 'charge', design: art('bolt', '#F5C518', '#12161C') },
+  { id: 'bolt-mint', name: 'Bolt · Mint', set: 'charge', design: art('bolt', '#2DBE6C', '#FFFFFF'), isNew: true },
   { id: 'note', name: 'Note', set: 'music', design: art('note', '#7357E0', '#F7A8C8') },
   { id: 'note-lagoon', name: 'Note · Lagoon', set: 'music', design: art('note', '#1FB5D6', '#12161C'), isNew: true },
+  { id: 'note-coral', name: 'Note · Coral', set: 'music', design: art('note', '#F26A3D', '#FFE07A') },
 ]
 
 /** The five signature skins from the concept sheet. */
