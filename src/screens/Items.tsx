@@ -69,6 +69,7 @@ export function Items() {
         ))}
         {shown.length === 0 && <p className="empty">No items here.</p>}
       </div>
+      <button type="button" className="ghost-link" onClick={() => nav('/shop/design/stickers')}>Running low on stickers? Design a new pack</button>
     </Screen>
   )
 }

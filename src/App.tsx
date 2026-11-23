@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { StoreProvider, useStore } from './store'
@@ -64,12 +65,13 @@ const guarded: [string, ReactNode][] = [
   ['/settings/account', <AccountSettings />],
 ]
 
-export default function App() {
+const ShopApp = lazy(() => import('./shop/Shop'))
+
+function PhoneApp() {
   return (
-    <StoreProvider>
-      <BrowserRouter>
-        <SyncManager />
-        <div className="device">
+    <>
+      <SyncManager />
+      <div className="device">
           <div className="device-inner">
             <Routes>
               <Route path="/" element={<Home />} />
@@ -82,6 +84,18 @@ export default function App() {
             <Toasts />
           </div>
         </div>
+    </>
+  )
+}
+
+export default function App() {
+  return (
+    <StoreProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/shop/*" element={<Suspense fallback={null}><ShopApp /></Suspense>} />
+          <Route path="*" element={<PhoneApp />} />
+        </Routes>
       </BrowserRouter>
     </StoreProvider>
   )

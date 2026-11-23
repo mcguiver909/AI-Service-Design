@@ -79,6 +79,7 @@ export function Settings() {
       <Group label="Help">
         <GroupRow title="FAQ" to="/settings/help" />
         <GroupRow title="Send feedback" to="/settings/help?feedback=1" />
+        <GroupRow title="Shop stickers and keyrings" sub="Design your own clear stickers" to="/shop" />
       </Group>
 
       <p className="version">Tagly 1.0 · prototype build</p>

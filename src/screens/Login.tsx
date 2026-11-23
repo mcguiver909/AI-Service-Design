@@ -68,6 +68,7 @@ export function Login() {
         </Button>
         <p className="fine-print"><Lock size={12} /> New here? This creates your Tagly account. Tagly only reads event titles and times from your calendar.</p>
         <LinkButton onClick={() => { startDemo(); nav('/today') }}>Explore the demo</LinkButton>
+        <button type="button" className="ghost-link" onClick={() => nav('/shop')}>Need stickers? Design yours in the shop</button>
         <button type="button" className="ghost-link" onClick={() => {
           signIn({ email: 'local', name: 'You' })
           set({ googleConnected: false, permissions: { bluetooth: false, notifications: false, calendar: false, location: false } })
